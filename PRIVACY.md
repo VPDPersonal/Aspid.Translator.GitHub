@@ -11,8 +11,9 @@ and no accounts. Text is translated on your device by Chrome.
 
 On `github.com` pages, the extension reads the text of pull requests, comments, commits and
 README files to translate it. That text is handed to Chrome's built-in Translator and
-LanguageDetector APIs, which run on your device. The translated text is shown on the page and
-is never saved or sent anywhere. Nothing is posted to GitHub: other people still see the original.
+LanguageDetector APIs and to its extension language detector (`chrome.i18n`), which run on your
+device. The translated text is shown on the page and is never saved or sent anywhere. Nothing is
+posted to GitHub: other people still see the original.
 
 The extension does not run on any other site.
 

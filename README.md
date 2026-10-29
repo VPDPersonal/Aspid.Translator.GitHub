@@ -140,7 +140,7 @@ in `chrome://extensions`.
 | `src/content.js` | Finds what to translate on GitHub pages, runs the translation queue, renders labels and toggles. |
 | `src/dom.js` | Splits rendered markdown into segments with placeholder tags and writes translations back. |
 | `src/providers/` | Translation engines. `index.js` defines the `Provider` interface and the list of engines. |
-| `src/page-bridge.js` | Content-side client for `bridge.js`; detects the language of a text. |
+| `src/page-bridge.js` | Content-side client for `bridge.js`; detects the language of a text, falling back to `chrome.i18n.detectLanguage` when the `LanguageDetector` model is missing (as in Dia). |
 | `src/bridge.js` | Runs in the page's main world and calls the built-in `Translator` and `LanguageDetector` APIs. |
 | `src/background.js` | Service worker: opens the settings. |
 | `src/settings.js` | Stored settings, their defaults and the list of target languages. |

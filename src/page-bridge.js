@@ -3,6 +3,7 @@
 // with JSON string payloads.
 
 import { t } from './i18n.js';
+import { targetFor } from './settings.js';
 
 let seq = 0;
 const pending = new Map();
@@ -44,10 +45,40 @@ export function onDownloadProgress(listener) {
   progressListener = listener;
 }
 
-/** Returns the most likely language of `text` as `{ lang, confidence }`, or null. */
+/**
+ * Returns the most likely language of `text` as `{ lang, confidence }`, or null.
+ * Falls back to chrome.i18n when the LanguageDetector model is missing or waits for a download:
+ * Chromium-based browsers such as Dia never get that model.
+ */
 export async function detectLanguage(text) {
-  const [top] = await callBridge('detector.detect', { text });
-  return top ?? null;
+  try {
+    const [top] = await callBridge('detector.detect', { text });
+    return top ?? null;
+  } catch {
+    return detectWithCld(text);
+  }
+}
+
+// Words of letters only: identifiers, paths, versions and sizes are not prose.
+const plainWords = (text) => text.split(/\s+/)
+  .map((word) => word.replace(/^[("'`[]+|[)"'`\],.:;!?]+$/g, ''))
+  .filter((word) => /^\p{L}+(?:['’]\p{L}+)?$/u.test(word))
+  .join(' ');
+
+// CLD3, built into Chromium, so it needs no model download.
+async function detectWithCld(text) {
+  const { languages: [top] } = await chrome.i18n.detectLanguage(text);
+  if (!top) return null;
+  const guess = { lang: top.language, confidence: top.percentage / 100 };
+  // `und` would maximize to English, so it is checked by name.
+  if (['en', 'und'].includes(guess.lang) || new Intl.Locale(guess.lang).maximize().script !== 'Latn') return guess;
+  // CLD3 tells scripts apart well, but often takes English technical text for another Latin-script
+  // language: Catalan for a commit title, Dutch for a list of packages, Maltese for a bundle size
+  // table. Such a guess stands only when the plain words give it again, reliably, and the
+  // Translator supports the language.
+  const second = await chrome.i18n.detectLanguage(plainWords(text));
+  const confirmed = second.isReliable && second.languages[0]?.language === guess.lang;
+  return confirmed && targetFor(guess.lang) ? guess : null;
 }
 
 /** Downloads the language detector model. Call it inside a user gesture. */
