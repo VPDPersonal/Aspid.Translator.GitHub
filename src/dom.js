@@ -32,10 +32,10 @@ const ATOM_SELECTOR = '.user-mention, .team-mention, .issue-link, .commit-link, 
 // Link texts that are references rather than prose: URLs, #123, owner/repo#123, SHAs, @user.
 const REF_TEXT = /^(?:https?:\/\/\S+|www\.\S+|[\w.\/-]*#\d+|[0-9a-f]{7,40}|@[\w-]+(?:\/[\w-]+)?)$/i;
 const LETTER = /\p{L}/u;
-// A placeholder tag as a translator returns it. Translators sometimes change its case (`</G0>`)
-// or lose a part of it (`<x2>`, `<x2/`, `<x2`, `g1>`), so only the letter, the number and
-// a leading slash count. A closing tag of an atom (`</x2>`) is ignored.
-const TAG = /<?(\/)?([xg])(\d+)\s*\/?>|<(\/)?([xg])(\d+)\/?/gi;
+// A placeholder tag as a translator returns it. Translators sometimes change its case (`</G0>`),
+// add spaces (`</ g0>`, `<x0 />`) or lose a part of it (`<x2>`, `<x2/`, `<x2`, `g1>`), so only
+// the letter, the number and a leading slash count. A closing tag of an atom (`</x2>`) is ignored.
+const TAG = /<\s*(\/)?\s*([xg])(\d+)(?:\s*\/?\s*>|\/)?|(\/)?([xg])(\d+)\s*\/?>/gi;
 
 function parseTag(match) {
   return {
@@ -108,13 +108,22 @@ export function collectSegments(root) {
     .filter((segment) => hasLetters(stripTags(segment.text)));
 }
 
-const WORD_OR_TAG = /(<\/?[xg]\d+\/?>)|([\p{L}\p{N}_]+(?:\.[\p{L}\p{N}_]+)*)/gu;
+// A tag, or a word together with the `.`, `/` and `-` joints of file and package names.
+const WORD_OR_TAG = /(<\/?[xg]\d+\/?>)|(@?[\p{L}\p{N}_]+(?:[-./][\p{L}\p{N}_]+)*)/gu;
 const SENTENCE_END = /(?:^|[.!?:(«"'])$/;
 
 function isIdentifier(word) {
   return /\p{Ll}\p{Lu}/u.test(word) // CamelCase: SerializeReference, OnGUI
     || /^\p{Lu}[\p{Lu}\p{N}]+$/u.test(word) // acronyms: CI, IMGUI
     || /[\p{L}\p{N}][_.][\p{L}\p{N}]/u.test(word); // snake_case, file.cs
+}
+
+// Package names, paths and branches: @vue/compiler-core, runtime-dom.global.prod.js, feature/login-form.
+// Plain pairs such as "and/or" stay translatable.
+function isPath(word) {
+  return word.startsWith('@')
+    || /[\p{L}\p{N}][_.][\p{L}\p{N}]/u.test(word)
+    || (word.includes('/') && /-|\d|\/.*\//.test(word));
 }
 
 function atSentenceStart(text, offset) {
@@ -128,13 +137,16 @@ function atSentenceStart(text, offset) {
  * `capitalized` also protects capitalized words in mid-sentence; use it for English sources only.
  */
 export function protectNames(segment, { capitalized }) {
+  const protect = (word) => `<x${segment.tokens.push({ node: document.createTextNode(word), atom: true }) - 1}/>`;
   segment.text = segment.text.replace(WORD_OR_TAG, (match, tag, word, offset, text) => {
     if (tag) return tag;
-    const name = isIdentifier(word)
-      || (capitalized && /^\p{Lu}\p{Ll}+$/u.test(word) && !atSentenceStart(text, offset));
-    if (!name) return word;
-    const id = segment.tokens.push({ node: document.createTextNode(word), atom: true }) - 1;
-    return `<x${id}/>`;
+    if (isPath(word)) return protect(word);
+    // Other compounds are checked word by word, so "JavaScript-based" keeps "based" translatable.
+    return word.replace(/[^-/]+/g, (part, at) => {
+      const name = isIdentifier(part)
+        || (capitalized && /^\p{Lu}\p{Ll}+$/u.test(part) && !atSentenceStart(text, offset + at));
+      return name ? protect(part) : part;
+    });
   });
 }
 
