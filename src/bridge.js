@@ -45,14 +45,35 @@
     return translatorPromises.get(key);
   }
 
+  // An abort, a missing user gesture or an input over the quota says nothing about the instance.
+  const KEEP_INSTANCE = new Set(['AbortError', 'NotAllowedError', 'QuotaExceededError']);
+
+  // Calls `use` with the instance from the cached `promise`. After the on-device service restarts,
+  // for example while another language pack downloads, the instance fails every call, so a failed
+  // call drops it from the cache through `forget` and the next call creates a fresh one. `forget`
+  // returns false when the cache no longer holds `promise`.
+  async function withInstance(promise, use, forget) {
+    const instance = await promise;
+    try {
+      return await use(instance);
+    } catch (error) {
+      if (!KEEP_INSTANCE.has(error?.name) && forget()) instance.destroy();
+      throw error;
+    }
+  }
+
   const handlers = {
     async 'detector.prepare'() {
       await getDetector();
       return true;
     },
     async 'detector.detect'({ text }) {
-      const detector = await getDetector();
-      const results = await detector.detect(text);
+      const promise = getDetector();
+      const results = await withInstance(promise, (detector) => detector.detect(text), () => {
+        if (detectorPromise !== promise) return false;
+        detectorPromise = null;
+        return true;
+      });
       return results.slice(0, 3).map((r) => ({ lang: r.detectedLanguage, confidence: r.confidence }));
     },
     async 'translator.prepare'({ source, target }) {
@@ -60,10 +81,13 @@
       return true;
     },
     async 'translator.translate'({ source, target, texts }) {
-      const translator = await getTranslator(source, target);
-      const out = [];
-      for (const text of texts) out.push(await translator.translate(text));
-      return out;
+      const promise = getTranslator(source, target);
+      const key = `${source}>${target}`;
+      return withInstance(promise, async (translator) => {
+        const out = [];
+        for (const text of texts) out.push(await translator.translate(text));
+        return out;
+      }, () => translatorPromises.get(key) === promise && translatorPromises.delete(key));
     },
   };
 
