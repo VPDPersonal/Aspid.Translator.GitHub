@@ -235,9 +235,10 @@ function retry(job) {
 // Must be called from a click handler: model downloads need a user gesture.
 function prepareModels(source = 'en') {
   const { provider, settings: { target } } = state;
-  const downloads = [prepareDetector()];
-  if (provider.prepare && !sameLanguage(source, target)) downloads.push(provider.prepare({ source, target }));
-  Promise.all(downloads).then(
+  // The detector is optional: without it detectLanguage() falls back to chrome.i18n.
+  prepareDetector().catch(() => {});
+  const download = provider.prepare && !sameLanguage(source, target) ? provider.prepare({ source, target }) : null;
+  Promise.resolve(download).then(
     () => {
       state.needsActivation = false;
       for (const job of state.jobs.values()) if (job.status === 'activation') retry(job);
