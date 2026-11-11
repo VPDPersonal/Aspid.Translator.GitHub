@@ -244,5 +244,21 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "Mostrar todos os originais",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "Traduzir tudo",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "Repositório",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "Descrição do repositório (About)",
+    "description": "Switch for the repository description in the About sidebar."
   }
 }

@@ -244,5 +244,21 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "Показване на всички оригинали",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "Превод на всичко",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "Хранилище",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "Описание на хранилището (About)",
+    "description": "Switch for the repository description in the About sidebar."
   }
 }

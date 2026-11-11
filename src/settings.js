@@ -1,7 +1,7 @@
 import { uiLanguage } from './i18n.js';
 
 /** Parts of a page that can be translated; options.html has a switch for each, with `data-part` set to its key. */
-export const PARTS = ['prTitle', 'prBody', 'comments', 'reviewComments', 'commitTitles', 'commitBodies', 'readme'];
+export const PARTS = ['prTitle', 'prBody', 'comments', 'reviewComments', 'commitTitles', 'commitBodies', 'readme', 'about'];
 
 /**
  * Languages offered as the translation target: every language Chrome's built-in Translator supports,

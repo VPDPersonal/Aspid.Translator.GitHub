@@ -244,5 +244,21 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "모든 원문 표시",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "모두 번역",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "저장소",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "저장소 설명 (About)",
+    "description": "Switch for the repository description in the About sidebar."
   }
 }

@@ -6,22 +6,30 @@ import {
 } from './dom.js';
 import { detectLanguage, onDownloadProgress, prepareDetector } from './page-bridge.js';
 import { getProvider } from './providers/index.js';
+import { ABOUT_SELECTOR, controlScope, createControl, directoryMessages, placeControl, removeControl } from './controls.js';
 
 // Pull requests (all tabs), single commits and commit lists.
 const PAGE_PATH = /^\/[^/]+\/[^/]+\/(?:pull\/\d+|commit\/[0-9a-f]{7,40}|commits(?=\/|$))/;
-// Repository home, folders and files. The button shows up there only when a README is rendered.
+// Repository home, folders and files with commit messages or rendered markdown.
 const REPO_PATH = /^\/[^/]+\/[^/]+(?:\/(?:tree|blob)\/.+)?\/?$/;
 const README_SELECTOR = 'article.markdown-body[itemprop="text"], #readme .markdown-body';
 const EXCLUDE_SELECTOR = [
   'form', '[contenteditable="true"]', '.js-preview-body', '[data-ght-clone]', '.prose-diff',
-  '.rich-diff', '.js-file-content', '[class*="MarkdownEditor"]', '[class*="markdown-editor"]',
+  '.rich-diff', '.js-file-content', '[data-ght-ui]', '[class*="MarkdownEditor"]', '[class*="markdown-editor"]',
 ].join(',');
 
-// What can be translated. `mode` picks the segmenter and the UI:
-//   block  - rendered markdown; a label above it has a per-comment toggle
-//   inline - a one-line title; the original is in the tooltip
-//   plain  - a plain-text commit body; the original is in the tooltip
+// Segmenters for rendered markdown, one-line titles and plain-text commit bodies.
 const TARGETS = [
+  {
+    mode: 'block',
+    kind: 'about',
+    selector: ABOUT_SELECTOR,
+  },
+  {
+    mode: 'inline',
+    kind: 'commitTitles',
+    find: directoryMessages,
+  },
   {
     mode: 'inline',
     kind: 'prTitle',
@@ -33,6 +41,7 @@ const TARGETS = [
     selector: [
       '.js-details-container code:has(> a.markdown-title)', // PR conversation timeline
       '[data-testid="commit-row-item"] h4 > span', // commit lists
+      '[data-testid="commit-row-item"] h4 > a > span', // current GitHub commit lists
       '[class*="commitMessageContainer"] > span:not(.extended-commit-description-container)', // commit page
     ].join(','),
   },
@@ -66,6 +75,7 @@ const state = {
   needsActivation: false,
   downloadProgress: null,
   jobs: new Map(), // translated element -> job
+  groups: new Map(), // comment, title, document or commit -> shared local control
   queue: [],
   running: 0,
 };
@@ -73,6 +83,7 @@ let fab = null;
 
 onDownloadProgress((loaded) => {
   state.downloadProgress = loaded < 1 ? loaded : null;
+  for (const group of state.groups.values()) updateControl(group);
   updateFab();
 });
 
@@ -152,19 +163,20 @@ function scan() {
   const { parts } = state.settings;
   for (const target of TARGETS) {
     if (target.kind && !parts[target.kind]) continue;
-    for (const el of document.querySelectorAll(target.selector)) {
+    for (const el of target.find ? target.find() : document.querySelectorAll(target.selector)) {
       if (state.jobs.has(el) || el.closest(EXCLUDE_SELECTOR) || !hasLetters(el.textContent)) continue;
       let kind = target.kind;
       if (target.mode === 'block') {
         if (el.querySelector('.markdown-body')) continue; // translate the innermost body only
-        kind = markdownKind(el);
+        kind ??= markdownKind(el);
         if (!parts[kind]) continue;
       }
       const job = {
         el, kind, mode: target.mode, status: 'pending', showOriginal: state.showOriginal,
-        clone: null, embeds: [], label: null, source: null, text: '',
+        clone: null, embeds: [], source: null, text: '', errorText: null, group: null,
       };
       state.jobs.set(el, job);
+      attachGroup(job);
       io.observe(el);
     }
   }
@@ -172,6 +184,7 @@ function scan() {
 
 function enqueue(job) {
   job.status = 'queued';
+  job.errorText = null;
   state.queue.push(job);
   pump();
 }
@@ -192,13 +205,13 @@ function pump() {
 async function processJob(job) {
   job.status = 'working';
   job.text = textOf(job.el);
-  if (job.mode === 'block') setLabel(job, 'loading', `🌐 ${t('labelTranslating')}`);
+  updateControl(job.group);
   try {
     const clone = await translateElement(job);
     if (!isCurrent(job)) return;
     if (!clone) {
       job.status = 'skipped';
-      removeLabel(job);
+      updateControl(job.group);
       return;
     }
     job.clone = clone;
@@ -206,29 +219,24 @@ async function processJob(job) {
     job.el.after(clone);
     job.status = 'done';
     render(job);
+    updateControl(job.group);
   } catch (error) {
     if (!isCurrent(job)) return;
     if (error.code === 'activation') {
       job.status = 'activation';
       state.needsActivation = true;
-      if (job.mode === 'block') {
-        setLabel(job, 'error', `🌐 ${t('labelNeedsModel')}`, t('actionDownload'), () => prepareModels(job.source));
-      }
+      job.errorText = t('labelNeedsModel');
     } else {
       job.status = 'error';
-      if (job.mode === 'block') {
-        setLabel(job, 'error', `⚠️ ${t('labelError', error.message)}`, t('actionRetry'), () => retry(job));
-      } else {
-        job.el.title = t('tooltipError', error.message);
-      }
+      job.errorText = t('labelError', error.message);
     }
+    updateControl(job.group);
     updateFab();
   }
 }
 
 function retry(job) {
   if (!isCurrent(job)) return;
-  removeLabel(job);
   enqueue(job);
 }
 
@@ -246,8 +254,9 @@ function prepareModels(source = 'en') {
     },
     (error) => {
       for (const job of state.jobs.values()) {
-        if (job.status === 'activation' && job.mode === 'block') {
-          setLabel(job, 'error', `⚠️ ${t('labelDownloadFailed', error.message)}`);
+        if (job.status === 'activation') {
+          job.errorText = t('labelDownloadFailed', error.message);
+          updateControl(job.group);
         }
       }
     },
@@ -268,32 +277,99 @@ function setHidden(node, hidden) {
   }
 }
 
-// Classic GitHub comments render the body as a <td>; put the label above its table instead.
-const labelAnchor = (el) => (el.tagName === 'TD' ? el.closest('table') ?? el : el);
-
-function setLabel(job, kind, text, actionText, onAction) {
-  if (!job.label) {
-    job.label = document.createElement('div');
-    job.label.className = 'ght-label';
-    labelAnchor(job.el).before(job.label);
+function attachGroup(job) {
+  const scope = controlScope(job.el, job.kind);
+  let group = state.groups.get(scope.root);
+  if (!group) {
+    group = { ...scope, jobs: new Set(), showOriginal: state.showOriginal, control: null };
+    state.groups.set(scope.root, group);
   }
-  job.label.dataset.state = kind;
-  const span = document.createElement('span');
-  span.textContent = text;
-  job.label.replaceChildren(span);
-  if (actionText) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'ght-link';
-    button.textContent = actionText;
-    button.addEventListener('click', onAction);
-    job.label.append(button);
+  group.jobs.add(job);
+  job.group = group;
+  job.showOriginal = group.showOriginal;
+}
+
+function detachGroup(job) {
+  const group = job.group;
+  if (!group) return;
+  group.jobs.delete(job);
+  job.group = null;
+  if (group.jobs.size) updateControl(group);
+  else {
+    removeControl(group);
+    state.groups.delete(group.root);
   }
 }
 
-function removeLabel(job) {
-  job.label?.remove();
-  job.label = null;
+function onControlClick(group) {
+  const activation = [...group.jobs].find(job => job.status === 'activation');
+  if (activation) {
+    prepareModels(activation.source);
+    return;
+  }
+  const errors = [...group.jobs].filter(job => job.status === 'error');
+  if (errors.length) {
+    errors.forEach(retry);
+    return;
+  }
+  group.showOriginal = !group.showOriginal;
+  for (const job of group.jobs) {
+    job.showOriginal = group.showOriginal;
+    if (job.status === 'done') render(job);
+  }
+  updateControl(group);
+}
+
+function updateControl(group) {
+  if (!group) return;
+  const jobs = [...group.jobs];
+  const activation = jobs.find(job => job.status === 'activation');
+  const error = jobs.find(job => job.status === 'error');
+  const busy = jobs.some(job => job.status === 'working' || job.status === 'queued');
+  const done = jobs.some(job => job.status === 'done');
+  if (!activation && !error && !busy && !done) {
+    removeControl(group);
+    return;
+  }
+  group.control ??= createControl(() => onControlClick(group));
+  const { button, icon, label } = group.control;
+  let text, hint, status;
+  if (activation) {
+    status = 'activation';
+    text = t('actionDownload');
+    hint = activation.errorText;
+  } else if (error) {
+    status = 'error';
+    text = t('actionRetry');
+    hint = error.errorText;
+  } else if (busy) {
+    status = 'loading';
+    text = hint = t('labelTranslating');
+  } else {
+    status = 'done';
+    text = t(group.kind === 'directory'
+      ? group.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals'
+      : group.showOriginal ? 'actionShowTranslation' : 'actionShowOriginal');
+    const from = [...new Set(jobs.map(job => job.source).filter(Boolean))].map(code => languageName(code)).join(', ') || t('sourceUnknown');
+    hint = group.showOriginal ? t('labelOriginal', from) : t('labelTranslated', from, languageName(state.settings.target));
+  }
+  const downloading = activation && state.downloadProgress !== null;
+  if (downloading) text = hint = t('fabDownloading', Math.round(state.downloadProgress * 100));
+  const scopeKey = group.kind === 'commit' || group.kind === 'directory' ? 'settingsGroupCommits'
+    : group.kind === 'document' ? 'partReadme'
+      : `part${jobs[0].kind.charAt(0).toUpperCase()}${jobs[0].kind.slice(1)}`;
+  button.disabled = status === 'loading' || Boolean(downloading);
+  button.dataset.state = status;
+  button.setAttribute('aria-label', `${t(scopeKey)}: ${text}`);
+  button.setAttribute('aria-description', hint);
+  button.setAttribute('aria-busy', String(button.disabled));
+  if (status === 'done') button.setAttribute('aria-pressed', String(group.showOriginal));
+  else button.removeAttribute('aria-pressed');
+  button.title = `${hint}\n${text}`;
+  const glyph = error ? '⚠' : '🌐';
+  if (icon.textContent !== glyph) icon.textContent = glyph;
+  if (label.textContent !== text) label.textContent = text;
+  placeControl(group);
 }
 
 // Moves element ids to whichever copy is visible, so in-page anchors keep working.
@@ -318,21 +394,12 @@ function moveIds(job, toClone) {
 }
 
 function render(job) {
-  const { target } = state.settings;
   setHidden(job.el, !job.showOriginal);
   setHidden(job.clone, job.showOriginal);
   moveIds(job, !job.showOriginal);
   placeEmbeds(job.embeds, !job.showOriginal);
   const from = job.source ? languageName(job.source) : t('sourceUnknown');
-  if (job.mode !== 'block') {
-    job.clone.title = t('tooltipOriginal', from, job.el.textContent.trim());
-    return;
-  }
-  const text = job.showOriginal ? t('labelOriginal', from) : t('labelTranslated', from, languageName(target));
-  setLabel(job, 'done', `🌐 ${text}`, t(job.showOriginal ? 'actionShowTranslation' : 'actionShowOriginal'), () => {
-    job.showOriginal = !job.showOriginal;
-    render(job);
-  });
+  if (job.mode !== 'block') job.clone.title = t('tooltipOriginal', from, job.el.textContent.trim());
 }
 
 function removeTranslation(job) {
@@ -341,8 +408,8 @@ function removeTranslation(job) {
   placeEmbeds(job.embeds, false);
   for (const { home } of job.embeds) home.remove();
   job.clone?.remove();
-  removeLabel(job);
   setHidden(job.el, false);
+  detachGroup(job);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -371,9 +438,11 @@ function updateFab() {
   else if (!state.active) text = t('fabTranslate');
   else if (state.needsActivation) text = t('fabDownloadModel');
   else if (busy) text = t('fabTranslating', busy);
-  else text = t(state.showOriginal ? 'actionShowTranslation' : 'actionShowOriginal');
-  fab.textContent = `🌐 ${text}`;
+  else text = t(state.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals');
+  const label = `🌐 ${text}`;
+  if (fab.textContent !== label) fab.textContent = label;
   fab.title = t('fabTooltip', languageName(state.settings.target), state.provider.title);
+  fab.setAttribute('aria-label', text);
 }
 
 function onFabClick() {
@@ -384,10 +453,12 @@ function onFabClick() {
   }
   if (state.needsActivation) return;
   state.showOriginal = !state.showOriginal;
+  for (const group of state.groups.values()) group.showOriginal = state.showOriginal;
   for (const job of state.jobs.values()) {
     job.showOriginal = state.showOriginal;
     if (job.status === 'done') render(job);
   }
+  for (const group of state.groups.values()) updateControl(group);
   updateFab();
 }
 
@@ -406,6 +477,7 @@ function stop() {
   state.needsActivation = false;
   for (const job of state.jobs.values()) removeTranslation(job);
   state.jobs.clear();
+  state.groups.clear();
   state.queue.length = 0;
   updateFab();
 }
@@ -417,10 +489,12 @@ function pageKeyOf(pathname) {
   return null;
 }
 
-// Shows the button on PR and commit pages, and on repository pages that render a README.
+// Repository descriptions and commit messages can be translated without a README.
 function syncFab() {
   const visible = state.pageKey
-    && (state.pageAlways || (state.settings.parts.readme && document.querySelector(README_SELECTOR)));
+    && (state.pageAlways || (state.settings.parts.readme && document.querySelector(README_SELECTOR))
+      || (state.settings.parts.commitTitles && directoryMessages().length)
+      || (state.settings.parts.about && document.querySelector(ABOUT_SELECTOR)));
   if (visible) ensureFab();
   else removeFab();
 }
@@ -454,9 +528,14 @@ function maintain() {
     if (!job.el.isConnected || (settled && textOf(job.el) !== job.text)) {
       removeTranslation(job);
       state.jobs.delete(job.el);
+    } else if (controlScope(job.el, job.kind).root !== job.group.root) {
+      detachGroup(job);
+      attachGroup(job);
+      if (job.status === 'done') render(job);
     }
   }
   scan();
+  for (const group of state.groups.values()) updateControl(group);
 }
 
 let maintainTimer = 0;
@@ -490,7 +569,14 @@ function applySettings(settings) {
 (async () => {
   applySettings(await loadSettings());
   onLocationChange();
-  new MutationObserver(scheduleMaintain).observe(document.body, { childList: true, subtree: true, characterData: true });
+  const ownUI = node => (node.nodeType === 1 ? node : node.parentElement)?.closest('[data-ght-ui], [data-ght-clone], .ght-fab');
+  new MutationObserver(records => {
+    if (records.some(record => !ownUI(record.target) && !(record.type === 'childList'
+      && [...record.addedNodes, ...record.removedNodes].every(ownUI)))) scheduleMaintain();
+  }).observe(document.body, {
+    childList: true, subtree: true, characterData: true,
+    attributes: true, attributeFilter: ['hidden', 'aria-hidden', 'aria-pressed', 'class'],
+  });
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);
 })();

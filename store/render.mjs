@@ -25,12 +25,12 @@ const FRAME = { width: 1280, height: 800, top: 136, window: 1120 };
 const VIEWPORT = { width: 1280, height: Math.round(((FRAME.height - FRAME.top) * 1280) / FRAME.window) };
 
 const ALL_PARTS = {
-  prTitle: true, prBody: true, comments: true, reviewComments: true, commitTitles: true, commitBodies: true, readme: true,
+  prTitle: true, prBody: true, comments: true, reviewComments: true, commitTitles: true, commitBodies: true, readme: true, about: true,
 };
 
 /**
  * One screenshot per entry, per store language. `at` is the original text of a comment to
- * scroll to (the top of the page when absent), `offset` is where its label ends up in the
+ * scroll to (the top of the page when absent), `offset` is where its body ends up in the
  * viewport, `scroll` moves further down, and `original` is the original text of a comment
  * to switch back to the original.
  */
@@ -181,7 +181,7 @@ async function settle(page, timeout = 90000) {
     await sleep(1000);
     const state = await page.evaluate(() => ({
       fab: document.querySelector('.ght-fab')?.textContent ?? '',
-      loading: document.querySelectorAll('.ght-label[data-state="loading"]').length,
+      loading: document.querySelectorAll('.ght-toggle[data-state="loading"]').length,
     }));
     if (/model|модел/i.test(state.fab)) {
       await page.click('.ght-fab'); // a real click: Chrome downloads models only after a user gesture
@@ -272,12 +272,17 @@ async function capturePage(page, extensionId, shot) {
   await settle(page);
 
   const top = await page.evaluate(({ at, offset = 0, scroll = 0, original, readme }) => {
-    // A label sits right before the original comment, which the translation follows.
-    const labelOf = (text) => [...document.querySelectorAll('.ght-label')]
-      .find((label) => label.nextElementSibling?.textContent.includes(text));
-    if (original) labelOf(original)?.querySelector('.ght-link')?.click();
-    // On a repository page, the README is the only comment-like block with a label.
-    const target = readme ? document.querySelector('.ght-label') : at && labelOf(at);
+    const bodies = [...document.querySelectorAll('.markdown-body:not([data-ght-clone])')];
+    const bodyOf = (text) => bodies.find(body => body.textContent.includes(text));
+    if (original) {
+      const body = bodyOf(original);
+      const container = body?.closest('.js-comment, .timeline-comment, .review-comment, [id^="discussion_r"], [data-testid="comment-viewer-container"], [class*="ReviewComment"]') ?? body?.parentElement;
+      const button = container?.querySelector('.ght-toggle');
+      if (!button) throw new Error(`No translation toggle for "${original}"`);
+      button.click();
+    }
+    const body = readme ? bodies.find(body => body.matches('article[itemprop="text"], #readme .markdown-body')) : at && bodyOf(at);
+    const target = body?.hasAttribute('data-ght-hidden') ? body.nextElementSibling : body;
     if (at && !target) throw new Error(`"${at}" is not on the page`);
     return target ? Math.max(0, target.getBoundingClientRect().top + scrollY - offset + scroll) : 0;
   }, shot);

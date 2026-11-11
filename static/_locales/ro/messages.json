@@ -244,5 +244,21 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "Afișează toate originalele",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "Tradu tot",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "Depozit",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "Descrierea depozitului (About)",
+    "description": "Switch for the repository description in the About sidebar."
   }
 }
