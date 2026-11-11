@@ -15,14 +15,14 @@
   display: none !important;
 }
 
-:is(.comment-reactions, .js-reactions-container, [data-testid="reactions"]):has(> .ght-control-slot) {
+:is(.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]):has(> .ght-control-slot) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   row-gap: 8px;
 }
 
-:is(.comment-reactions, .js-reactions-container, [data-testid="reactions"]):has(> .ght-control-slot) > form {
+:is(.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]):has(> .ght-control-slot) > form {
   min-width: 0;
   max-width: 100%;
 }
@@ -36,6 +36,24 @@
 .ght-control-title,
 .ght-control-header {
   margin-inline: 0;
+}
+
+.ght-control-title-inline {
+  margin-inline-start: 8px;
+}
+
+:is([class*="issueNumberText"], .gh-header-number):has(> .ght-control-title-inline) {
+  white-space: nowrap;
+}
+
+.ght-control-release,
+.ght-control-compare {
+  align-self: flex-start;
+  margin-inline-end: 8px;
+}
+
+[class*="commitActions"]:has(> .ght-control-reference) {
+  align-items: center;
 }
 
 h2:has(> .ght-control-about) {
@@ -89,6 +107,12 @@ h2:has(> .ght-control-about) {
   min-height: 32px;
   border-radius: 6px;
   background: var(--button-default-bgColor-rest, var(--bgColor-muted, #f6f8fa));
+}
+
+.ght-control-release .ght-toggle,
+.ght-control-reference .ght-toggle {
+  width: var(--control-small-size, 28px);
+  min-height: var(--control-small-size, 28px);
 }
 
 .ght-toggle-icon {

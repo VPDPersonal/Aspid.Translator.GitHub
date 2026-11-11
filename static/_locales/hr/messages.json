@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Opis repozitorija (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Ostale GitHub stranice",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Zadaci (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Popisi PR-ova i zadataka",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Izdanja",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Rasprave",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Početna i novosti (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

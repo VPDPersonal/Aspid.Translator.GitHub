@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "களஞ்சிய விளக்கம் (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "பிற GitHub பக்கங்கள்",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "சிக்கல்கள் (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR மற்றும் சிக்கல் பட்டியல்கள்",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "வெளியீடுகள்",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "விவாதங்கள்",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "முகப்பு மற்றும் ஊட்டம் (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

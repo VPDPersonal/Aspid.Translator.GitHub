@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Mô tả kho lưu trữ (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Các trang GitHub khác",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Vấn đề (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Danh sách PR và vấn đề",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Bản phát hành",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Thảo luận",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Trang chủ và bảng tin (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

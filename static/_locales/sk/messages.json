@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Popis repozitára (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Ďalšie stránky GitHubu",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Úlohy (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Zoznamy PR a úloh",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Vydania",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Diskusie",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Domov a novinky (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

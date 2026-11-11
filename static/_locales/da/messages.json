@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Beskrivelse af repository (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Andre GitHub-sider",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Sager (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Lister over PR og sager",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Udgivelser",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Diskussioner",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Startside og feed (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

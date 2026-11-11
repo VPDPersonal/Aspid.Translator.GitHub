@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "रिपॉझिटरीचे वर्णन (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "इतर GitHub पृष्ठे",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "समस्या (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR आणि समस्यांच्या याद्या",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "प्रकाशने",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "चर्चा",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "मुख्यपृष्ठ आणि फीड (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

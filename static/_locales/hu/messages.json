@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Tároló leírása (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "További GitHub-oldalak",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Hibajegyek (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR- és hibajegylisták",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Kiadások",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Beszélgetések",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Kezdőlap és hírfolyam (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

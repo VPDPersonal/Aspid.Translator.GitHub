@@ -7,15 +7,13 @@ import {
 import { detectLanguage, onDownloadProgress, prepareDetector } from './page-bridge.js';
 import { getProvider } from './providers/index.js';
 import { ABOUT_SELECTOR, controlScope, createControl, directoryMessages, placeControl, removeControl } from './controls.js';
+import { FEED_CARD, REFERENCED_COMMIT, extraTargets, feedContent, pageOf } from './pages.js';
 
-// Pull requests (all tabs), single commits and commit lists.
-const PAGE_PATH = /^\/[^/]+\/[^/]+\/(?:pull\/\d+|commit\/[0-9a-f]{7,40}|commits(?=\/|$))/;
-// Repository home, folders and files with commit messages or rendered markdown.
-const REPO_PATH = /^\/[^/]+\/[^/]+(?:\/(?:tree|blob)\/.+)?\/?$/;
 const README_SELECTOR = 'article.markdown-body[itemprop="text"], #readme .markdown-body';
 const EXCLUDE_SELECTOR = [
-  'form', '[contenteditable="true"]', '.js-preview-body', '[data-ght-clone]', '.prose-diff',
+  '[contenteditable="true"]', '.js-preview-body', '[data-ght-clone]', '.prose-diff',
   '.rich-diff', '.js-file-content', '[data-ght-ui]', '[class*="MarkdownEditor"]', '[class*="markdown-editor"]',
+  '[role="dialog"]', 'dialog', '.Overlay',
 ].join(',');
 
 // Segmenters for rendered markdown, one-line titles and plain-text commit bodies.
@@ -33,11 +31,13 @@ const TARGETS = [
   {
     mode: 'inline',
     kind: 'prTitle',
+    pages: ['pull'],
     selector: 'h1 .markdown-title, h2[class*="PageHeader-Title"] .markdown-title, .gh-header-title .js-issue-title',
   },
   {
     mode: 'inline',
     kind: 'commitTitles',
+    pages: ['pull', 'commit', 'commits', 'repo'],
     selector: [
       '.js-details-container code:has(> a.markdown-title)', // PR conversation timeline
       '[data-testid="commit-row-item"] h4 > span', // commit lists
@@ -48,12 +48,30 @@ const TARGETS = [
   {
     mode: 'plain',
     kind: 'commitBodies',
+    pages: ['pull', 'commit', 'commits', 'repo'],
     selector: '.extended-commit-description-container, .js-details-container .Details-content--hidden > pre',
+  },
+  {
+    mode: 'inline',
+    kind: 'commitTitles',
+    pages: ['issue', 'pull'],
+    selector: `${REFERENCED_COMMIT} [class*="commitMessageText"] .markdown-body`,
+  },
+  {
+    mode: 'plain',
+    kind: 'commitBodies',
+    pages: ['issue', 'pull'],
+    selector: `${REFERENCED_COMMIT} > .markdown-body > p`,
   },
   { mode: 'block', kind: null, selector: '.markdown-body' },
 ];
 
 function markdownKind(el) {
+  if (el.closest(REFERENCED_COMMIT)) return el.closest('[class*="commitMessageText"]') ? 'commitTitles' : 'commitBodies';
+  const pageParts = { issue: 'issues', discussion: 'discussions', discussionList: 'discussions', releases: 'releases', wiki: 'wiki', lists: 'lists' };
+  if (pageParts[state.pageKind]) return pageParts[state.pageKind];
+  if (state.pageKind === 'home' || state.pageKind === 'feed') return el.closest(FEED_CARD) ? 'feed' : null;
+  if (state.pageKind === 'compare') return null;
   if (el.matches(README_SELECTOR)) return 'readme';
   if (el.closest('[id^="pullrequest-"]')) return 'prBody';
   const review = [
@@ -69,6 +87,7 @@ const state = {
   provider: null,
   url: '',
   pageKey: '',
+  pageKind: '',
   pageAlways: false,
   active: false,
   showOriginal: false,
@@ -161,10 +180,13 @@ const isCurrent = (job) => state.jobs.get(job.el) === job;
 function scan() {
   if (!state.active) return;
   const { parts } = state.settings;
-  for (const target of TARGETS) {
+  for (const target of [...extraTargets(state.pageKind), ...TARGETS]) {
+    if (target.pages && !target.pages.includes(state.pageKind)) continue;
     if (target.kind && !parts[target.kind]) continue;
     for (const el of target.find ? target.find() : document.querySelectorAll(target.selector)) {
-      if (state.jobs.has(el) || el.closest(EXCLUDE_SELECTOR) || !hasLetters(el.textContent)) continue;
+      const excluded = el.closest(EXCLUDE_SELECTOR);
+      if (state.jobs.has(el) || excluded || (!target.allowInForm && el.closest('form')) || !hasLetters(el.textContent)) continue;
+      if (el.closest('[data-ght-source]') || el.querySelector('[data-ght-source]')) continue;
       let kind = target.kind;
       if (target.mode === 'block') {
         if (el.querySelector('.markdown-body')) continue; // translate the innermost body only
@@ -176,6 +198,7 @@ function scan() {
         clone: null, embeds: [], source: null, text: '', errorText: null, group: null,
       };
       state.jobs.set(el, job);
+      el.setAttribute('data-ght-source', '');
       attachGroup(job);
       io.observe(el);
     }
@@ -321,7 +344,7 @@ function onControlClick(group) {
 }
 
 function updateControl(group) {
-  if (!group) return;
+  if (!group || group.local === false) return;
   const jobs = [...group.jobs];
   const activation = jobs.find(job => job.status === 'activation');
   const error = jobs.find(job => job.status === 'error');
@@ -408,6 +431,7 @@ function removeTranslation(job) {
   placeEmbeds(job.embeds, false);
   for (const { home } of job.embeds) home.remove();
   job.clone?.remove();
+  job.el.removeAttribute('data-ght-source');
   setHidden(job.el, false);
   detachGroup(job);
 }
@@ -430,18 +454,24 @@ function removeFab() {
   fab = null;
 }
 
+function pageErrors() {
+  return [...state.jobs.values()].filter(job => job.group?.local === false && job.status === 'error');
+}
+
 function updateFab() {
   if (!fab) return;
   const busy = state.queue.length + state.running;
+  const error = pageErrors()[0];
   let text;
   if (state.downloadProgress !== null) text = t('fabDownloading', Math.round(state.downloadProgress * 100));
   else if (!state.active) text = t('fabTranslate');
   else if (state.needsActivation) text = t('fabDownloadModel');
   else if (busy) text = t('fabTranslating', busy);
+  else if (error) text = t('actionRetry');
   else text = t(state.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals');
   const label = `🌐 ${text}`;
   if (fab.textContent !== label) fab.textContent = label;
-  fab.title = t('fabTooltip', languageName(state.settings.target), state.provider.title);
+  fab.title = error && !busy ? `${error.errorText}\n${text}` : t('fabTooltip', languageName(state.settings.target), state.provider.title);
   fab.setAttribute('aria-label', text);
 }
 
@@ -452,6 +482,11 @@ function onFabClick() {
     return;
   }
   if (state.needsActivation) return;
+  const errors = pageErrors();
+  if (errors.length) {
+    errors.forEach(retry);
+    return;
+  }
   state.showOriginal = !state.showOriginal;
   for (const group of state.groups.values()) group.showOriginal = state.showOriginal;
   for (const job of state.jobs.values()) {
@@ -482,19 +517,13 @@ function stop() {
   updateFab();
 }
 
-function pageKeyOf(pathname) {
-  const pr = pathname.match(PAGE_PATH)?.[0];
-  if (pr) return { key: pr, always: true };
-  if (REPO_PATH.test(pathname)) return { key: pathname, always: false };
-  return null;
-}
-
 // Repository descriptions and commit messages can be translated without a README.
 function syncFab() {
   const visible = state.pageKey
     && (state.pageAlways || (state.settings.parts.readme && document.querySelector(README_SELECTOR))
       || (state.settings.parts.commitTitles && directoryMessages().length)
-      || (state.settings.parts.about && document.querySelector(ABOUT_SELECTOR)));
+      || (state.settings.parts.about && document.querySelector(ABOUT_SELECTOR))
+      || (state.settings.parts.feed && ['home', 'feed'].includes(state.pageKind) && feedContent().length));
   if (visible) ensureFab();
   else removeFab();
 }
@@ -502,15 +531,17 @@ function syncFab() {
 function onLocationChange() {
   if (location.href === state.url) return;
   state.url = location.href;
-  const page = pageKeyOf(location.pathname);
+  const page = pageOf(location.pathname);
   if (!page) {
     stop();
     state.pageKey = '';
+    state.pageKind = '';
     syncFab();
     return;
   }
   if (page.key !== state.pageKey) {
     state.pageKey = page.key;
+    state.pageKind = page.kind;
     state.pageAlways = page.always;
     stop();
     if (state.settings.auto) start();
@@ -536,6 +567,7 @@ function maintain() {
   }
   scan();
   for (const group of state.groups.values()) updateControl(group);
+  updateFab();
 }
 
 let maintainTimer = 0;

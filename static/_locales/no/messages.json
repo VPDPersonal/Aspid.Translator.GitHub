@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Beskrivelse av kodelageret (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Andre GitHub-sider",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Saker (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Lister over PR-er og saker",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Utgivelser",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Diskusjoner",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Hjem og nyhetsstrøm (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "リポジトリの説明（About）",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "その他の GitHub ページ",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Issue",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR と Issue の一覧",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "リリース",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "ディスカッション",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "ホームとフィード (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

@@ -25,7 +25,7 @@ const SKIP_BLOCK_SELECTOR = [
 
 const ATOM_TAGS = new Set([
   'CODE', 'KBD', 'SAMP', 'VAR', 'TT', 'IMG', 'BR', 'SVG', 'G-EMOJI', 'INPUT', 'VIDEO', 'PICTURE',
-  'MATH', 'MATH-RENDERER', 'BUTTON', 'CLIPBOARD-COPY',
+  'MATH', 'MATH-RENDERER', 'BUTTON', 'CLIPBOARD-COPY', 'TIME', 'RELATIVE-TIME', 'LOCAL-TIME',
 ]);
 const ATOM_SELECTOR = '.user-mention, .team-mention, .issue-link, .commit-link, a.anchor, [data-hovercard-type]';
 
@@ -280,6 +280,7 @@ export function applyTranslation(segment, translated) {
 export function cloneForTranslation(el) {
   const clone = el.cloneNode(true);
   clone.setAttribute('data-ght-clone', '');
+  clone.removeAttribute('data-ght-source');
   clone.removeAttribute('id');
   clone.removeAttribute('data-testid');
   if (clone.hasAttribute('data-ght-hidden')) {

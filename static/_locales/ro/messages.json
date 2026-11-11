@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Descrierea depozitului (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Alte pagini GitHub",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Probleme (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Liste de PR și probleme",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Versiuni",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Discuții",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Acasă și flux (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

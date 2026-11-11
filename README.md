@@ -6,8 +6,9 @@
 
 **Review pull requests in your own language.**
 
-A Chrome extension that translates pull requests, code review, commits and READMEs
-right on github.com. Free, private, on your device, and it never touches your code.
+A Chrome extension that translates pull requests, issues, discussions, releases,
+commits, documentation and activity cards right on github.com. Free, private,
+on your device, and it never touches your code.
 
 ![Chrome 138+](https://img.shields.io/badge/Chrome-138%2B-4285F4?logo=googlechrome&logoColor=white)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-success)
@@ -34,13 +35,17 @@ and the original is always one click away.
 
 - **The whole pull request.** The title, description, conversation, review comments,
   commit titles and commit messages. Repository READMEs and rendered `.md` files too.
+- **More of GitHub.** Issues and their comments, PR and issue lists, releases,
+  Discussions and replies, commit messages in Compare, Wiki pages, repository About
+  descriptions, and content cards on signed-in Home and Feed pages.
 - **Code stays code.** Code blocks, inline code, identifiers such as `SerializeReference`,
   @mentions, #issue references, links, conventional commit prefixes (`fix(scope):`)
   and git trailers (`Co-Authored-By:`) are never translated.
 - **Free and private.** Translation runs on your device with the translator built into Chrome.
   No account, no API key, no servers, nothing to pay for.
-- **The original is one click away.** Every comment has its own toggle, titles and commits
-  show the original on hover, and a floating button flips the whole page.
+- **The original is one click away.** Comments, documents, releases and activity cards
+  have local controls; lists and Wiki use only the floating page button. Titles show the original on hover.
+  The floating button switches the whole page and resets local choices.
 - **Fast on huge PRs.** Only what scrolls into view gets translated, and text that is
   already in your language is skipped.
 - **Keeps up with GitHub.** New comments, edited comments and page switches without a reload
@@ -56,10 +61,17 @@ and the original is always one click away.
 | Page | What gets translated |
 |---|---|
 | Pull request, all tabs | Title, description, comments, review threads, commits |
+| Issue | Title, description and comments |
+| PR and issue lists | Row titles, controlled by the floating page button |
 | Commit list | Commit titles and descriptions |
 | Single commit | Commit title and description |
-| Repository home and folders | README |
+| Repository home and folders | README, About description and commit messages in the file list |
 | Any `.md` file | The rendered document |
+| Releases and a single release | Release titles and notes; versions and download names are preserved |
+| Discussions | Titles, body, accepted answers, replies and list titles |
+| Compare | Commit messages; source diffs remain unchanged |
+| Wiki | Page title and rendered documentation |
+| Home and Feed, signed in | Activity-card text, descriptions and linked issue or PR titles |
 
 Translates into Arabic, Bengali, Bulgarian, Chinese (Simplified and Traditional), Croatian, Czech,
 Danish, Dutch, English, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian,
@@ -135,9 +147,15 @@ Switch to the original for that comment with one click, and
 Run `npm run watch` while developing, then press the reload button on the extension card
 in `chrome://extensions`.
 
+Run `npm test` for the DOM integration suite. It uses a translation stand-in and an
+installed Chrome executable; set `CHROME_PATH` to override the default macOS path.
+Check Chrome's real translation models and personalized Home/Feed layouts manually.
+
 | Path | Role |
 |---|---|
 | `src/content.js` | Finds what to translate on GitHub pages, runs the translation queue, renders labels and toggles. |
+| `src/pages.js` | Classifies routes and selects content on issues, lists, releases, Discussions, Compare, Wiki and activity feeds. |
+| `src/controls.js` | Groups local translations and places controls beside titles, native actions and comment reactions. |
 | `src/dom.js` | Splits rendered markdown into segments with placeholder tags and writes translations back. |
 | `src/providers/` | Translation engines. `index.js` defines the `Provider` interface and the list of engines. |
 | `src/page-bridge.js` | Content-side client for `bridge.js`; detects the language of a text, falling back to `chrome.i18n.detectLanguage` when the `LanguageDetector` model is missing (as in Dia). |

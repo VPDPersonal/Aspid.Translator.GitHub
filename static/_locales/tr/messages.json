@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Depo açıklaması (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Diğer GitHub sayfaları",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Sorunlar (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR ve sorun listeleri",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Sürümler",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Tartışmalar",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Ana sayfa ve akış (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

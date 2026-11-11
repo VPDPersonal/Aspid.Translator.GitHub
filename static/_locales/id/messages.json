@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Deskripsi repositori (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Halaman GitHub lainnya",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Isu (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Daftar PR dan isu",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Rilis",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Diskusi",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Beranda dan feed (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

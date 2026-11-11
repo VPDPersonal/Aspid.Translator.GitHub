@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "রিপোজিটরির বিবরণ (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "অন্যান্য GitHub পৃষ্ঠা",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "ইস্যু (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR ও ইস্যুর তালিকা",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "রিলিজ",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "আলোচনা",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "হোম ও ফিড (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

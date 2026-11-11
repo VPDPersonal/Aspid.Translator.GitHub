@@ -1,5 +1,8 @@
-const COMMENT = '.js-comment, .timeline-comment, .review-comment, [id^="discussion_r"], [data-testid="comment-viewer-container"], [class*="ReviewComment"]';
-const COMMIT = '[data-testid="commit-row-item"], .js-details-container, [class*="commitMessageContainer"]';
+import { DISCUSSION_TITLE, FEED_CARD, ISSUE_TITLE, REFERENCED_COMMIT, listScope, pageOf, releaseScope, releaseTitles, wikiScope } from './pages.js';
+
+const COMMENT = '.js-comment, .timeline-comment, .review-comment, .discussion-comment, .react-issue-body, [id^="discussion_r"], [data-testid="issue-body"], [data-testid="issue-comment"], [data-testid="comment-viewer-outer-box"], [data-testid="comment-viewer-container"], [class*="ReviewComment"]';
+const REACTIONS = '.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]';
+const COMMIT = `${REFERENCED_COMMIT}, [data-testid="commit-row-item"], .js-details-container, [class*="commitMessageContainer"]`;
 const DIRECTORY_TABLE = 'table[aria-labelledby="folders-and-files"], table:has(.react-directory-row)';
 const COMMIT_LINK = /\/commit\/[0-9a-f]{7,40}(?:[?#/]|$)/i;
 export const ABOUT_SELECTOR = '[class*="sidebarSection"] > p[class*="description"], .BorderGrid-cell > p.f4.my-3';
@@ -53,6 +56,20 @@ function directoryPosition(table) {
 }
 
 export function controlScope(el, kind) {
+  const pageKind = pageOf(location.pathname)?.kind;
+  if (kind === 'discussions' && pageKind === 'discussionList') {
+    return { root: document.querySelector('.repository-content, main, [role="main"]') ?? listScope(el), kind: 'collection', local: false };
+  }
+  if (kind === 'lists') return { root: listScope(el), kind: 'collection', local: false };
+  if (kind === 'releases') return { root: releaseScope(el), kind: 'release' };
+  if (kind === 'wiki') return { root: wikiScope(el), kind: 'wiki', local: false };
+  if (kind === 'feed') return { root: el.closest(FEED_CARD) ?? el.parentElement, kind: 'feedcard' };
+  if ((kind === 'issues' && el.matches(ISSUE_TITLE)) || (kind === 'discussions' && el.matches(DISCUSSION_TITLE))) {
+    const title = kind === 'issues'
+      ? document.querySelector('[data-testid="issue-title"], h1 .js-issue-title') ?? el
+      : document.querySelector('h1 .js-issue-title, h1 .markdown-title') ?? el;
+    return { root: title.closest('h1, h2') ?? title.parentElement, kind: 'title', inline: true };
+  }
   if (kind === 'commitTitles' || kind === 'commitBodies') {
     const table = kind === 'commitTitles' && directoryTable(el);
     if (table) return { root: table, kind: 'directory' };
@@ -93,6 +110,15 @@ function documentHeader(el) {
 }
 
 function commitPosition(root, el) {
+  if (root.matches(REFERENCED_COMMIT)) {
+    const actions = root.querySelector('[class*="commitActions"]');
+    return {
+      parent: actions ?? root.querySelector('[class*="commitHeaderRow"]') ?? root,
+      before: actions?.firstChild,
+      headerControl: true,
+      referenceControl: true,
+    };
+  }
   if (root.matches('[class*="commitMessageContainer"]')) {
     const header = [...document.querySelectorAll('[data-component="PageHeader"]')]
       .find(node => node.querySelector('a[class*="browseFilesButton"], a[href*="/tree/"] .octicon-file-code'));
@@ -106,6 +132,13 @@ function commitPosition(root, el) {
     if (metadata) return { parent: metadata, before: metadata.firstChild };
   }
   if (root.matches('.js-details-container')) {
+    const row = root.closest('.js-commits-list-item');
+    if (row) {
+      const actions = row.querySelector(':scope > .flex-shrink-0');
+      return actions
+        ? { parent: actions, before: actions.firstChild, headerControl: true, compareControl: true }
+        : { parent: row, before: root.nextSibling, headerControl: true, compareControl: true };
+    }
     const title = root.querySelector('code:has(> a.markdown-title)');
     const line = title?.parentElement.parentElement;
     if (line) return { parent: line, before: title.parentElement.nextSibling };
@@ -132,7 +165,30 @@ function position(group) {
   const el = [...group.jobs][0]?.el;
   if (!el) return null;
   if (group.kind === 'directory') return directoryPosition(group.root);
-  if (group.kind === 'title') return titlePosition(group.root);
+  if (group.kind === 'release') {
+    const title = releaseTitles(group.root)[0];
+    const body = title?.closest('.Box-body');
+    const header = body && branch(title, body);
+    if (header && header !== title) {
+      const action = [...header.querySelectorAll('button, summary')]
+        .find(node => !node.closest('dialog, [role="dialog"], [data-ght-ui]'));
+      const container = action && branch(action, header);
+      // Keep the toggle beside Compare, outside its custom element and dialog.
+      const parent = container && container !== action && !container.matches('select-panel, dialog-helper, details') ? container : header;
+      return { parent, before: action && branch(action, parent), compact: true, headerControl: true, releaseControl: true };
+    }
+  }
+  if (group.kind === 'feedcard') {
+    const actions = group.root.querySelector('.feed-actions, [data-testid="feed-actions"]');
+    return { parent: group.root, before: actions && branch(actions, group.root), footer: true };
+  }
+  if (group.kind === 'title') {
+    if (group.inline) {
+      const number = group.root.querySelector('[class*="issueNumberText"], .gh-header-number');
+      return { parent: number ?? group.root, compact: true, inlineTitle: true };
+    }
+    return titlePosition(group.root);
+  }
   if (group.kind === 'commit') return { ...commitPosition(group.root, el), compact: true };
   if (group.kind === 'about') {
     const heading = group.root.querySelector('h2');
@@ -144,10 +200,9 @@ function position(group) {
     if (header) return header;
   }
   if (group.kind === 'comment') {
-    const reactions = group.root.querySelector('.comment-reactions')
-      ?? [...group.root.querySelectorAll('.js-reactions-container, [data-testid="reactions"]')]
-        .find(node => !node.closest('form, [data-ght-clone], .markdown-body'));
-    if (reactions && !reactions.closest('form, [data-ght-clone], .markdown-body')) {
+    const reactions = [...group.root.querySelectorAll(REACTIONS)]
+      .find(node => !node.closest('form, [data-ght-clone], .markdown-body') && node.closest(COMMENT) === group.root);
+    if (reactions) {
       return { parent: reactions, compact: false };
     }
   }
@@ -188,9 +243,13 @@ export function placeControl(group) {
   slot.classList.toggle('ght-control-footer', Boolean(target.footer));
   slot.classList.toggle('ght-control-document', group.kind === 'document');
   slot.classList.toggle('ght-control-title', group.kind === 'title');
+  slot.classList.toggle('ght-control-title-inline', Boolean(target.inlineTitle));
   slot.classList.toggle('ght-control-title-standalone', Boolean(target.titleStandalone));
   slot.classList.toggle('ght-control-header', group.kind === 'title' || group.kind === 'about' || Boolean(target.headerControl));
   slot.classList.toggle('ght-control-about', group.kind === 'about');
+  slot.classList.toggle('ght-control-release', Boolean(target.releaseControl));
+  slot.classList.toggle('ght-control-compare', Boolean(target.compareControl));
+  slot.classList.toggle('ght-control-reference', Boolean(target.referenceControl));
   button.classList.toggle('ght-toggle-compact', Boolean(target.compact));
   const before = target.before ?? null;
   // Avoid observing our own no-op placements as GitHub content changes.

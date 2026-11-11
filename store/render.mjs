@@ -26,6 +26,7 @@ const VIEWPORT = { width: 1280, height: Math.round(((FRAME.height - FRAME.top) *
 
 const ALL_PARTS = {
   prTitle: true, prBody: true, comments: true, reviewComments: true, commitTitles: true, commitBodies: true, readme: true, about: true,
+  issues: true, lists: true, releases: true, discussions: true, wiki: true, feed: true,
 };
 
 /**

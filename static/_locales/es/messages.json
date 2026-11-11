@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Descripción del repositorio (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Otras páginas de GitHub",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Incidencias (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Listas de PR e incidencias",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Versiones",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Debates",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Inicio y actividad (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

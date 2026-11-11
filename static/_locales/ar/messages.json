@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "وصف المستودع (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "صفحات GitHub الأخرى",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "المشكلات (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "قوائم طلبات السحب والمشكلات",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "الإصدارات",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "المناقشات",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "الرئيسية والموجز (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

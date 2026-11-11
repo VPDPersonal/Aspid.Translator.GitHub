@@ -260,5 +260,33 @@
   "partAbout": {
     "message": "Описание репозитория (About)",
     "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Другие страницы GitHub",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Задачи (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Списки PR и Issues",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Релизы",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Обсуждения (Discussions)",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Главная и лента (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }
