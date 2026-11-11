@@ -51,11 +51,32 @@ export function onDownloadProgress(listener) {
  * Chromium-based browsers such as Dia never get that model.
  */
 export async function detectLanguage(text) {
+  let top = null;
   try {
-    const [top] = await callBridge('detector.detect', { text });
-    return top ?? null;
+    [top] = await callBridge('detector.detect', { text });
   } catch {
-    return detectWithCld(text);
+    // chrome.i18n can detect languages without a downloaded model.
+  }
+  if (top?.lang === 'und') return top;
+  const plausible = top && matchesScript(top.lang, text);
+  if (plausible && top.confidence >= 0.4 && targetFor(top.lang)) return top;
+  // A short technical title can be confidently misidentified as an unsupported language.
+  // Check an independent detector before asking Translator to use that language pair.
+  const fallback = await detectWithCld(text).catch(() => null);
+  if (fallback && fallback.lang !== 'und') return fallback;
+  return plausible ? top : null;
+}
+
+function matchesScript(language, text) {
+  if (language === 'und') return true;
+  if (!/\p{L}/u.test(text)) return false;
+  try {
+    const script = new Intl.Locale(language).maximize().script;
+    // Unicode groups Chinese, Japanese and Korean differently from BCP 47 scripts.
+    const scripts = { Hans: ['Han'], Hant: ['Han'], Jpan: ['Han', 'Hiragana', 'Katakana'], Kore: ['Hangul', 'Han'] };
+    return (scripts[script] ?? [script]).some(value => new RegExp(`\\p{Script=${value}}`, 'u').test(text));
+  } catch {
+    return false;
   }
 }
 
@@ -70,6 +91,7 @@ async function detectWithCld(text) {
   const { languages: [top] } = await chrome.i18n.detectLanguage(text);
   if (!top) return null;
   const guess = { lang: top.language, confidence: top.percentage / 100 };
+  if (!matchesScript(guess.lang, text)) return null;
   // `und` would maximize to English, so it is checked by name.
   if (['en', 'und'].includes(guess.lang) || new Intl.Locale(guess.lang).maximize().script !== 'Latn') return guess;
   // CLD3 tells scripts apart well, but often takes English technical text for another Latin-script

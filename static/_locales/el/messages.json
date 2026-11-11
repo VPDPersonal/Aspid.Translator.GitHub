@@ -244,5 +244,49 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "Εμφάνιση όλων των πρωτοτύπων",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "Μετάφραση όλων",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "Αποθετήριο",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "Περιγραφή αποθετηρίου (About)",
+    "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Άλλες σελίδες του GitHub",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Ζητήματα (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Λίστες PR και ζητημάτων",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Εκδόσεις",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Συζητήσεις",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Αρχική και ροή (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

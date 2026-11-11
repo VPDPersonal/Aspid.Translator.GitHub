@@ -244,5 +244,49 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "Näytä kaikki alkuperäiset",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "Käännä kaikki",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "Tietovarasto",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "Tietovaraston kuvaus (About)",
+    "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Muut GitHub-sivut",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Tehtävät (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR- ja tehtäväluettelot",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Julkaisut",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Keskustelut",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Etusivu ja syöte (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

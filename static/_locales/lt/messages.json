@@ -244,5 +244,49 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "Rodyti visus originalus",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "Versti viską",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "Saugykla",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "Saugyklos aprašymas (About)",
+    "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Kiti GitHub puslapiai",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Užduotys (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR ir užduočių sąrašai",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Leidimai",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Diskusijos",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Pradžia ir naujienos (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

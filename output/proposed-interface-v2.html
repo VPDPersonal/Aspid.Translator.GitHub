@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aspid Translator — размещение кнопок</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --gh-bg: var(--background, Canvas);
+    --gh-fg: var(--foreground, CanvasText);
+    --gh-panel: var(--card, Canvas);
+    --gh-soft: var(--secondary, ButtonFace);
+    --gh-border: color-mix(in srgb, var(--foreground, CanvasText) 20%, var(--background, Canvas));
+    --gh-muted: var(--muted-foreground, GrayText);
+    --gh-link: var(--info, LinkText);
+    --gh-focus: var(--ring, Highlight);
+    font-family: var(--font-sans, system-ui, sans-serif);
+    color: var(--gh-fg);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  [hidden] { display: none !important; }
+  #asp-interface-v2 { display: grid; gap: 16px; font-size: 14px; line-height: 1.55; }
+  #asp-interface-v2 button { font: inherit; color: inherit; cursor: pointer; }
+  #asp-interface-v2 button:focus-visible { outline: 2px solid var(--gh-focus); outline-offset: 3px; }
+  #asp-interface-v2 p, #asp-interface-v2 h1, #asp-interface-v2 h2, #asp-interface-v2 h3 { margin: 0; }
+  .asp-contexts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .asp-contexts button { padding: 6px 12px; border: 1px solid transparent; border-radius: 6px; background: transparent; }
+  .asp-contexts button[aria-selected="true"] { background: var(--gh-soft); border-color: var(--gh-border); }
+  .asp-contexts button:hover { background: var(--gh-soft); }
+  .asp-window { background: var(--gh-bg); border: 1px solid var(--gh-border); border-radius: 10px; overflow: hidden; }
+  .gh-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--gh-border); font-size: 13px; }
+  .gh-mark { display: inline-grid; place-items: center; width: 26px; height: 26px; margin-right: 4px; border: 1px solid var(--gh-border); border-radius: 50%; font-weight: 600; font-family: var(--font-mono, monospace); font-size: 11px; }
+  .gh-muted { color: var(--gh-muted); }
+  .gh-link { color: var(--gh-link); }
+  .gh-small { font-size: 12px; }
+  .gh-content { padding: 24px 18px 0; }
+  .gh-page { display: grid; gap: 22px; align-content: start; min-height: 610px; }
+  .gh-heading { display: grid; gap: 12px; }
+  .gh-heading-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+  .gh-heading-row h1 { flex: 1 1 360px; font-size: 23px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+  .gh-heading-actions { display: flex; align-items: center; gap: 8px; }
+  .gh-badge { display: inline-flex; align-items: center; padding: 1px 8px; border: 1px solid var(--gh-border); border-radius: 99px; white-space: nowrap; font-size: 11px; }
+  .gh-meta { display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center; color: var(--gh-muted); font-size: 12px; }
+  .gh-tabs { display: flex; flex-wrap: wrap; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--gh-border); font-size: 12px; }
+  .gh-tab-current { color: var(--gh-fg); font-weight: 600; }
+  .gh-comment { border: 1px solid var(--gh-border); border-radius: 7px; background: var(--gh-panel); overflow: hidden; }
+  .gh-comment-head { padding: 9px 14px; background: var(--gh-soft); border-bottom: 1px solid var(--gh-border); font-size: 12px; color: var(--gh-muted); }
+  .gh-comment-head strong { color: var(--gh-fg); font-weight: 600; }
+  .gh-comment-body { display: grid; gap: 14px; padding: 16px; }
+  .gh-comment-body h2 { font-size: 16px; font-weight: 600; }
+  .gh-comment-body code, .gh-meta code, .gh-prose code { font-size: .9em; font-family: var(--font-mono, monospace); background: var(--gh-soft); border-radius: 4px; padding: 2px 5px; overflow-wrap: anywhere; }
+  .gh-comment-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 16px 14px; }
+  .gh-reaction { display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--gh-border); border-radius: 50%; font-size: 19px; color: var(--gh-muted); }
+  .asp-local { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 30px; padding: 4px 11px; border: 1px solid color-mix(in srgb, var(--gh-fg) 30%, var(--gh-bg)); border-radius: 99px; background: transparent; font-size: 12px !important; font-weight: 600 !important; white-space: nowrap; }
+  .asp-local:hover, .asp-global:hover { background: var(--gh-soft); border-color: var(--gh-muted); }
+  .asp-icon { width: 30px; padding: 3px; flex: none; }
+  .asp-local[aria-pressed="true"] { background: var(--gh-soft); }
+  .asp-globe { font-size: 13px; line-height: 1; }
+  .gh-native-action { display: inline-flex; align-items: center; justify-content: center; color: var(--gh-muted); min-width: 22px; font-size: 16px; }
+  .gh-commit-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; }
+  .gh-commit-title { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+  .gh-commit-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-left: auto; }
+  .gh-sha { font-family: var(--font-mono, monospace); color: var(--gh-muted); font-size: 11px; }
+  .gh-commit-list { border: 1px solid var(--gh-border); border-radius: 7px; background: var(--gh-panel); overflow: hidden; }
+  .gh-commit-card { padding: 15px; display: grid; gap: 10px; }
+  .gh-commit-card + .gh-commit-card { border-top: 1px solid var(--gh-border); }
+  .gh-commit-card .gh-commit-title { font-weight: 600; font-size: 13px; }
+  .gh-commit-message { font-size: 12px; color: var(--gh-muted); }
+  .gh-file { border: 1px solid var(--gh-border); border-radius: 7px; background: var(--gh-panel); overflow: hidden; }
+  .gh-file-toolbar { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--gh-border); background: var(--gh-soft); }
+  .gh-file-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; }
+  .gh-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+  .gh-file-tab { padding: 3px 7px; border: 1px solid transparent; border-radius: 4px; background: transparent; font-size: 12px !important; }
+  .gh-file-tab[aria-selected="true"] { background: var(--gh-panel); border-color: var(--gh-border); font-weight: 600 !important; }
+  .gh-prose { padding: 24px; display: grid; gap: 18px; overflow-wrap: anywhere; }
+  .gh-prose h1 { font-size: 25px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid var(--gh-border); }
+  .gh-prose h2 { font-size: 19px; font-weight: 600; padding-bottom: 6px; border-bottom: 1px solid var(--gh-border); }
+  .gh-prose ul { padding-left: 20px; margin: 0; display: grid; gap: 8px; }
+  .gh-prose pre, .gh-source { margin: 0; padding: 14px; border-radius: 5px; background: var(--gh-soft); font-family: var(--font-mono, monospace); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .gh-source { margin: 16px; }
+  .gh-blame { padding: 18px; font-family: var(--font-mono, monospace); font-size: 11px; display: grid; gap: 10px; overflow-wrap: anywhere; }
+  .asp-page-footer { display: flex; justify-content: flex-end; padding: 20px 18px 18px; }
+  .asp-global { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; border: 1px solid var(--gh-border); border-radius: 99px; padding: 6px 13px; background: var(--gh-panel); font-size: 12px !important; font-weight: 600 !important; box-shadow: 0 2px 6px color-mix(in srgb, var(--gh-fg) 7%, transparent); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  @media (max-width: 520px) {
+    .gh-top { padding: 12px; }
+    .gh-content { padding: 18px 12px 0; }
+    .gh-heading-row h1 { font-size: 20px; }
+    .gh-heading-actions { margin-left: auto; }
+    .gh-page { min-height: 660px; }
+    .gh-prose { padding: 18px; }
+    .gh-prose h1 { font-size: 22px; }
+    .gh-file-toolbar { padding: 10px; }
+    .gh-comment-body { padding: 14px; }
+    .gh-comment-footer { padding: 0 14px 14px; }
+    .gh-tools { gap: 8px; }
+    .asp-document-label { display: none; }
+    .asp-document-button { width: 30px; padding: 3px; }
+    .asp-contexts button { padding: 6px 9px; }
+  }
+  @media (pointer: coarse) {
+    #asp-interface-v2 button { min-height: 44px; }
+    .asp-icon, .asp-document-button { min-width: 44px; }
+    .gh-reaction { width: 36px; height: 36px; }
+  }
+</style>
+</head>
+<body>
+<div id="asp-interface-v2">
+  <nav class="asp-contexts" role="tablist" aria-label="Места размещения кнопок">
+    <button id="asp-tab-pr" type="button" role="tab" data-page="pr" aria-controls="asp-page-pr" aria-selected="true">Пул-реквест</button>
+    <button id="asp-tab-commits" type="button" role="tab" data-page="commits" aria-controls="asp-page-commits" aria-selected="false">Коммиты</button>
+    <button id="asp-tab-readme" type="button" role="tab" data-page="readme" aria-controls="asp-page-readme" aria-selected="false">README</button>
+    <button id="asp-tab-file" type="button" role="tab" data-page="file" aria-controls="asp-page-file" aria-selected="false">.md-файл</button>
+  </nav>
+  <div class="asp-window">
+    <div class="gh-top"><span class="gh-mark" aria-hidden="true">GH</span><span class="gh-muted">VPDPersonal</span><span class="gh-muted">/</span><strong>Aspid.FastTools</strong></div>
+    <div class="gh-content">
+      <section id="asp-page-pr" class="gh-page" role="tabpanel" aria-labelledby="asp-tab-pr">
+        <div class="gh-heading">
+          <div class="gh-heading-row">
+            <h1><span data-text-for="pr-title"><span data-language="original" hidden>chore(deps): bump actions group with 2 updates</span><span data-language="translated">chore(deps): обновить группу actions: 2 обновления</span></span> <span class="gh-muted">#571</span></h1>
+            <div class="gh-heading-actions"><span class="gh-native-action" aria-label="Редактирование заголовка">✎</span><button type="button" class="asp-local asp-icon" data-toggle="pr-title" data-scope="Заголовок PR"><span class="asp-globe" aria-hidden="true">🌐</span></button></div>
+          </div>
+          <div class="gh-meta"><span class="gh-badge">Open</span><strong>dependabot[bot]</strong><span>wants to merge 1 commit into</span><code>main</code></div>
+        </div>
+        <div class="gh-tabs"><span class="gh-tab-current">Conversation</span><span>Commits 1</span><span>Checks 30</span><span>Files changed 2</span></div>
+        <article class="gh-comment">
+          <div class="gh-comment-head"><strong>dependabot[bot]</strong> commented yesterday</div>
+          <div class="gh-comment-body">
+            <p data-text-for="pr-body"><span data-language="original" hidden>Bumps the actions group with 2 updates: <code>actions/setup-dotnet</code> and <code>anthropics/claude-code-action</code>.</span><span data-language="translated">Обновляет группу actions: <code>actions/setup-dotnet</code> и <code>anthropics/claude-code-action</code>.</span></p>
+            <h2 data-text-for="pr-body"><span data-language="original" hidden>Updates</span><span data-language="translated">Обновления</span></h2>
+            <p><code>actions/setup-dotnet</code> · 6.0.0 → 6.1.0<br><code>anthropics/claude-code-action</code> · 1.0.252 → 1.0.269</p>
+            <p data-text-for="pr-body"><span data-language="original" hidden>Dependabot will resolve conflicts with this PR as long as you don't alter it yourself.</span><span data-language="translated">Dependabot разрешит конфликты этого PR, если вы не будете изменять его вручную.</span></p>
+          </div>
+          <div class="gh-comment-footer"><span class="gh-reaction" aria-label="Реакции GitHub">☺</span><button type="button" class="asp-local" data-toggle="pr-body" data-scope="Описание PR"><span class="asp-globe" aria-hidden="true">🌐</span><span data-action-label>Показать оригинал</span></button></div>
+        </article>
+        <div class="gh-commit-line">
+          <span class="gh-commit-title" data-text-for="pr-commit"><span data-language="original" hidden>chore(deps): bump actions group</span><span data-language="translated">chore(deps): обновить группу actions</span></span>
+          <div class="gh-commit-actions"><button type="button" class="asp-local asp-icon" data-toggle="pr-commit" data-scope="Коммит"><span class="asp-globe" aria-hidden="true">🌐</span></button><span class="gh-badge">Verified</span><span class="gh-muted" aria-label="CI пройден">✓</span><span class="gh-sha">384d2a9</span></div>
+        </div>
+        <article class="gh-comment">
+          <div class="gh-comment-head"><strong>reviewer</strong> left a review comment · <code>Build.cs</code></div>
+          <div class="gh-comment-body"><p data-text-for="pr-review"><span data-language="original" hidden>Please keep the existing timeout for the Windows build.</span><span data-language="translated">Пожалуйста, сохраните текущий тайм-аут для сборки Windows.</span></p></div>
+          <div class="gh-comment-footer"><span class="gh-reaction" aria-label="Реакции GitHub">☺</span><button type="button" class="asp-local" data-toggle="pr-review" data-scope="Комментарий ревью"><span class="asp-globe" aria-hidden="true">🌐</span><span data-action-label>Показать оригинал</span></button></div>
+        </article>
+      </section>
+
+      <section id="asp-page-commits" class="gh-page" role="tabpanel" aria-labelledby="asp-tab-commits" hidden>
+        <div class="gh-heading"><h2>Commits</h2><div class="gh-tabs"><span>Conversation</span><span class="gh-tab-current">Commits 3</span><span>Checks 30</span><span>Files changed 2</span></div></div>
+        <div>
+          <p class="gh-small gh-muted" style="margin-bottom:12px">Commits on Nov 10, 2026</p>
+          <div class="gh-commit-list">
+            <article class="gh-commit-card">
+              <div class="gh-commit-line"><span class="gh-commit-title" data-text-for="commit-a"><span data-language="original" hidden>chore(deps): bump actions group</span><span data-language="translated">chore(deps): обновить группу actions</span></span><div class="gh-commit-actions"><button type="button" class="asp-local asp-icon" data-toggle="commit-a" data-scope="Первый коммит"><span class="asp-globe" aria-hidden="true">🌐</span></button><span class="gh-badge">Verified</span><span class="gh-sha">384d2a9</span><span class="gh-native-action" aria-hidden="true">⧉</span><span class="gh-native-action" aria-hidden="true">‹›</span></div></div>
+              <p class="gh-commit-message" data-text-for="commit-a"><span data-language="original" hidden>Update the build tools used by CI.</span><span data-language="translated">Обновить инструменты сборки, используемые в CI.</span></p>
+              <p class="gh-small gh-muted">dependabot[bot] authored yesterday · ✓ 14 / 15</p>
+            </article>
+            <article class="gh-commit-card">
+              <div class="gh-commit-line"><span class="gh-commit-title" data-text-for="commit-b"><span data-language="original" hidden>fix: preserve the build timeout</span><span data-language="translated">fix: сохранить тайм-аут сборки</span></span><div class="gh-commit-actions"><button type="button" class="asp-local asp-icon" data-toggle="commit-b" data-scope="Второй коммит"><span class="asp-globe" aria-hidden="true">🌐</span></button><span class="gh-badge">Verified</span><span class="gh-sha">7c813b2</span><span class="gh-native-action" aria-hidden="true">⧉</span><span class="gh-native-action" aria-hidden="true">‹›</span></div></div>
+              <p class="gh-commit-message" data-text-for="commit-b"><span data-language="original" hidden>Keep the existing value for the Windows runner.</span><span data-language="translated">Оставить текущее значение для Windows runner.</span></p>
+              <p class="gh-small gh-muted">VPDPersonal authored yesterday · ✓ 15 / 15</p>
+            </article>
+            <article class="gh-commit-card">
+              <div class="gh-commit-line"><span class="gh-commit-title" data-text-for="commit-c"><span data-language="original" hidden>docs: clarify the installation steps</span><span data-language="translated">docs: уточнить шаги установки</span></span><div class="gh-commit-actions"><button type="button" class="asp-local asp-icon" data-toggle="commit-c" data-scope="Третий коммит"><span class="asp-globe" aria-hidden="true">🌐</span></button><span class="gh-badge">Verified</span><span class="gh-sha">da82f01</span><span class="gh-native-action" aria-hidden="true">⧉</span><span class="gh-native-action" aria-hidden="true">‹›</span></div></div>
+              <p class="gh-small gh-muted">VPDPersonal authored yesterday · ✓ 15 / 15</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="asp-page-readme" class="gh-page" role="tabpanel" aria-labelledby="asp-tab-readme" hidden>
+        <div class="gh-tabs"><span class="gh-tab-current">Code</span><span>Issues</span><span>Pull requests</span><span>Actions</span></div>
+        <article class="gh-file">
+          <div class="gh-file-toolbar"><div class="gh-file-tabs"><strong>README</strong><span class="gh-muted">MIT license</span></div><div class="gh-tools"><button type="button" class="asp-local asp-document-button" data-toggle="readme" data-scope="README"><span class="asp-globe" aria-hidden="true">🌐</span><span class="asp-document-label" data-action-label>Показать оригинал</span></button><span class="gh-native-action" aria-label="Редактировать README">✎</span><span class="gh-native-action" aria-label="Оглавление">☷</span></div></div>
+          <div class="gh-prose">
+            <h1>Aspid.FastTools</h1>
+            <p class="gh-small gh-muted">Unity 6000.0+ · MIT · 1.0.0</p>
+            <p data-text-for="readme"><span data-language="original" hidden>Unity tools for serialization, profiling and editor code. Less boilerplate, more time for your game.</span><span data-language="translated">Инструменты Unity для сериализации, профилирования и кода редактора. Меньше шаблонного кода — больше времени на игру.</span></p>
+            <h2 data-text-for="readme"><span data-language="original" hidden>Installation</span><span data-language="translated">Установка</span></h2>
+            <p data-text-for="readme"><span data-language="original" hidden>Open the Package Manager and add the package using its Git URL.</span><span data-language="translated">Откройте Package Manager и добавьте пакет по Git URL.</span></p>
+            <pre>https://github.com/VPDPersonal/Aspid.FastTools.git</pre>
+            <h2 data-text-for="readme"><span data-language="original" hidden>Features</span><span data-language="translated">Возможности</span></h2>
+            <ul><li data-text-for="readme"><span data-language="original" hidden>Convenient serialization attributes.</span><span data-language="translated">Удобные атрибуты сериализации.</span></li><li data-text-for="readme"><span data-language="original" hidden>Tools for the Unity Editor.</span><span data-language="translated">Инструменты для Unity Editor.</span></li></ul>
+          </div>
+        </article>
+      </section>
+
+      <section id="asp-page-file" class="gh-page" role="tabpanel" aria-labelledby="asp-tab-file" hidden>
+        <div class="gh-meta"><code>main</code><span class="gh-link">Aspid.FastTools</span><span>/</span><strong>AGENTS.md</strong></div>
+        <div class="gh-commit-line"><span class="gh-commit-title" data-text-for="file-commit"><span data-language="original" hidden>docs: clarify the project rules</span><span data-language="translated">docs: уточнить правила проекта</span></span><div class="gh-commit-actions"><button type="button" class="asp-local asp-icon" data-toggle="file-commit" data-scope="Последний коммит файла"><span class="asp-globe" aria-hidden="true">🌐</span></button><span class="gh-muted">✓</span><span class="gh-sha">21569c7</span><span class="gh-small gh-muted">History</span></div></div>
+        <article class="gh-file">
+          <div class="gh-file-toolbar">
+            <div class="gh-file-tabs" role="tablist" aria-label="Режим просмотра файла"><button id="asp-mode-preview" type="button" class="gh-file-tab" role="tab" data-file-mode="preview" aria-controls="asp-file-preview" aria-selected="true">Preview</button><button id="asp-mode-code" type="button" class="gh-file-tab" role="tab" data-file-mode="code" aria-controls="asp-file-code" aria-selected="false">Code</button><button id="asp-mode-blame" type="button" class="gh-file-tab" role="tab" data-file-mode="blame" aria-controls="asp-file-blame" aria-selected="false">Blame</button></div>
+            <div class="gh-tools"><button type="button" class="asp-local asp-icon" data-toggle="file-body" data-scope="Документ AGENTS.md"><span class="asp-globe" aria-hidden="true">🌐</span></button><span class="gh-small">Raw</span><span class="gh-native-action" aria-label="Копировать">⧉</span><span class="gh-native-action" aria-label="Скачать">↓</span><span class="gh-native-action" aria-label="Редактировать">✎</span></div>
+          </div>
+          <div id="asp-file-preview" class="gh-prose" role="tabpanel" aria-labelledby="asp-mode-preview">
+            <h1>Aspid.FastTools</h1>
+            <p data-text-for="file-body"><span data-language="original" hidden>The Unity package lives in <code>Aspid.FastTools/</code>. Generator and analyzer projects are maintained separately.</span><span data-language="translated">Пакет Unity находится в <code>Aspid.FastTools/</code>. Проекты генераторов и анализаторов поддерживаются отдельно.</span></p>
+            <h2 data-text-for="file-body"><span data-language="original" hidden>Rules</span><span data-language="translated">Правила</span></h2>
+            <ul><li data-text-for="file-body"><span data-language="original" hidden>Preserve the package structure.</span><span data-language="translated">Сохраняйте структуру пакета.</span></li><li data-text-for="file-body"><span data-language="original" hidden>Keep public identifiers in English.</span><span data-language="translated">Сохраняйте английские имена публичных идентификаторов.</span></li></ul>
+            <h2 data-text-for="file-body"><span data-language="original" hidden>Checks</span><span data-language="translated">Проверки</span></h2>
+            <p data-text-for="file-body"><span data-language="original" hidden>Run the checks relevant to your changes before opening a pull request.</span><span data-language="translated">Перед открытием пул-реквеста запустите проверки, относящиеся к вашим изменениям.</span></p>
+          </div>
+          <div id="asp-file-code" role="tabpanel" aria-labelledby="asp-mode-code" hidden><pre class="gh-source"># Aspid.FastTools
+
+The Unity package lives in `Aspid.FastTools/`.
+Generator and analyzer projects are maintained separately.
+
+## Rules
+
+- Preserve the package structure.
+- Keep public identifiers in English.
+
+## Checks
+
+Run the checks relevant to your changes
+before opening a pull request.</pre></div>
+          <div id="asp-file-blame" class="gh-blame" role="tabpanel" aria-labelledby="asp-mode-blame" hidden><span>21569c7 · VPDPersonal</span><span># Aspid.FastTools</span><span>The Unity package lives in `Aspid.FastTools/`.</span><span>## Rules</span><span>- Preserve the package structure.</span><span>- Keep public identifiers in English.</span><span>## Checks</span><span>Run the checks relevant to your changes before opening a pull request.</span></div>
+        </article>
+      </section>
+    </div>
+    <div class="asp-page-footer"><button id="asp-global" type="button" class="asp-global"><span class="asp-globe" aria-hidden="true">🌐</span><span id="asp-global-label">Показать все оригиналы</span></button></div>
+  </div>
+  <p id="asp-announcement" class="sr-only" aria-live="polite"></p>
+</div>
+<script>
+(() => {
+  const root = document.getElementById('asp-interface-v2');
+  const groups = {
+    pr: ['pr-title', 'pr-body', 'pr-commit', 'pr-review'],
+    commits: ['commit-a', 'commit-b', 'commit-c'],
+    readme: ['readme'],
+    file: ['file-commit', 'file-body'],
+  };
+  const ids = Object.values(groups).flat();
+  const state = {
+    page: 'pr',
+    fileMode: 'preview',
+    originals: Object.fromEntries(ids.map(id => [id, false])),
+    globalOriginal: Object.fromEntries(Object.keys(groups).map(page => [page, false])),
+  };
+
+  function applySaved(saved) {
+    const value = saved?.privateContent?.aspInterfaceV2;
+    if (!value || value.version !== 1) return;
+    if (Object.hasOwn(groups, value.page)) state.page = value.page;
+    if (['preview', 'code', 'blame'].includes(value.fileMode)) state.fileMode = value.fileMode;
+    for (const id of ids) if (typeof value.originals?.[id] === 'boolean') state.originals[id] = value.originals[id];
+    for (const page of Object.keys(groups)) if (typeof value.globalOriginal?.[page] === 'boolean') state.globalOriginal[page] = value.globalOriginal[page];
+  }
+
+  function render() {
+    for (const tab of root.querySelectorAll('[data-page]')) {
+      const selected = tab.dataset.page === state.page;
+      tab.setAttribute('aria-selected', String(selected));
+      root.querySelector(`#${tab.getAttribute('aria-controls')}`).hidden = !selected;
+    }
+    for (const text of root.querySelectorAll('[data-text-for]')) {
+      const language = state.originals[text.dataset.textFor] ? 'original' : 'translated';
+      for (const variant of text.children) variant.hidden = variant.dataset.language !== language;
+    }
+    for (const button of root.querySelectorAll('[data-toggle]')) {
+      const original = state.originals[button.dataset.toggle];
+      const action = original ? 'Показать перевод' : 'Показать оригинал';
+      button.setAttribute('aria-label', `${button.dataset.scope}: ${action.toLowerCase()}`);
+      button.setAttribute('aria-pressed', String(original));
+      button.title = `${button.dataset.scope} · ${original ? 'Оригинал: English' : 'Перевод: English → Русский'}\n${action}`;
+      const label = button.querySelector('[data-action-label]');
+      if (label) label.textContent = action;
+      if (button.dataset.toggle === 'file-body') button.hidden = state.fileMode !== 'preview';
+    }
+    for (const tab of root.querySelectorAll('[data-file-mode]')) {
+      const selected = tab.dataset.fileMode === state.fileMode;
+      tab.setAttribute('aria-selected', String(selected));
+      root.querySelector(`#${tab.getAttribute('aria-controls')}`).hidden = !selected;
+    }
+    const globalOriginal = state.globalOriginal[state.page];
+    root.querySelector('#asp-global-label').textContent = globalOriginal ? 'Перевести всё' : 'Показать все оригиналы';
+    root.querySelector('#asp-global').title = 'Переключает все блоки этой страницы и сбрасывает ручной выбор';
+  }
+
+  function persist() {
+    if (!window.openai?.setWidgetState) return;
+    const result = window.openai.setWidgetState({
+      modelContent: { page: state.page, originalBlocks: groups[state.page].filter(id => state.originals[id]) },
+      privateContent: { aspInterfaceV2: { version: 1, ...state } },
+    });
+    if (result?.catch) result.catch(() => {});
+  }
+
+  root.addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button || !root.contains(button)) return;
+    if (button.dataset.page) {
+      state.page = button.dataset.page;
+    } else if (button.dataset.fileMode) {
+      state.fileMode = button.dataset.fileMode;
+    } else if (button.dataset.toggle) {
+      const id = button.dataset.toggle;
+      state.originals[id] = !state.originals[id];
+      root.querySelector('#asp-announcement').textContent = `${button.dataset.scope}: ${state.originals[id] ? 'оригинал' : 'перевод'}`;
+    } else if (button.id === 'asp-global') {
+      const original = !state.globalOriginal[state.page];
+      state.globalOriginal[state.page] = original;
+      for (const id of groups[state.page]) state.originals[id] = original;
+      root.querySelector('#asp-announcement').textContent = original ? 'Все блоки страницы показаны в оригинале' : 'Все блоки страницы переведены';
+    } else return;
+    render();
+    persist();
+  });
+
+  root.addEventListener('keydown', event => {
+    const tab = event.target.closest('[role="tab"]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...tab.closest('[role="tablist"]').querySelectorAll('[role="tab"]')];
+    const offset = event.key === 'ArrowRight' ? 1 : -1;
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (tabs.indexOf(tab) + offset + tabs.length) % tabs.length;
+    event.preventDefault();
+    tabs[next].click();
+    tabs[next].focus();
+  });
+
+  applySaved(window.openai?.widgetState);
+  window.addEventListener('openai:set_globals', event => {
+    if (!event.detail?.globals?.widgetState) return;
+    applySaved(event.detail.globals.widgetState);
+    render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>

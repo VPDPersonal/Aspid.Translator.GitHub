@@ -244,5 +244,49 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "すべて原文で表示",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "すべて翻訳",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "リポジトリ",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "リポジトリの説明（About）",
+    "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "その他の GitHub ページ",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Issue",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR と Issue の一覧",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "リリース",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "ディスカッション",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "ホームとフィード (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

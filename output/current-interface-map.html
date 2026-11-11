@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub Translator — карта текущего интерфейса</title>
+<style>
+  :root { color-scheme: light dark; font-family: var(--font-sans, system-ui, sans-serif); --map-ink: var(--foreground, CanvasText); color: var(--map-ink); --map-line: var(--border, color-mix(in srgb, CanvasText 20%, Canvas)); --map-paper: var(--card, Canvas); --map-soft: var(--secondary, ButtonFace); --map-dim: var(--muted-foreground, GrayText); }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  #interface-map { display: grid; gap: 24px; font-size: 14px; line-height: 1.5; }
+  p, h2, h3, figure { margin: 0; }
+  h2, h3 { font-size: 14px; font-weight: 500; }
+  .caption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 10px; }
+  .small { font-size: 12px; }
+  .dim { color: var(--map-dim); }
+  .chrome { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--map-line); padding: 12px 0; }
+  .address { flex: 1; color: var(--map-dim); font-family: var(--font-mono, monospace); }
+  .icon-entry { display: flex; align-items: center; gap: 8px; }
+  .entry-mark { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--map-ink); border-radius: 6px; font-weight: 500; }
+  .entry-route { margin-top: 8px; text-align: right; }
+  .columns { display: grid; grid-template-columns: 1.12fr 1fr; gap: 24px; align-items: start; }
+  .columns > * { min-width: 0; }
+  .screen { border: 1px solid var(--map-line); border-radius: var(--radius, 8px); background: var(--map-paper); color: var(--card-foreground, var(--map-ink)); overflow: hidden; }
+  .screen-bar { background: var(--map-soft); padding: 10px 14px; border-bottom: 1px solid var(--map-line); }
+  .screen-body { padding: 16px; display: grid; gap: 20px; }
+  .repo-tabs { padding-bottom: 8px; border-bottom: 1px solid var(--map-line); }
+  .title-line { border-left: 2px solid var(--map-ink); padding-left: 10px; display: grid; gap: 5px; }
+  .block { border: 1px solid var(--map-line); border-radius: 6px; overflow: hidden; }
+  .author { padding: 8px 10px; border-bottom: 1px solid var(--map-line); background: var(--map-soft); }
+  .translation-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 10px 0; font-size: 12px; }
+  .action { text-decoration: underline; text-underline-offset: 3px; }
+  .content-sample { display: grid; gap: 8px; padding: 12px 10px; }
+  .skeleton { height: 5px; border-radius: 2px; background: var(--map-line); width: 100%; }
+  .skeleton.short { width: 68%; }
+  .skeleton.medium { width: 85%; }
+  .protected { padding: 8px; background: var(--map-soft); font-family: var(--font-mono, monospace); font-size: 12px; overflow-wrap: anywhere; }
+  .page-control { display: grid; justify-items: end; gap: 6px; padding-top: 10px; }
+  .floating-button { border: 1px solid var(--map-ink); border-radius: 99px; padding: 6px 12px; font-size: 12px; }
+  .section { display: grid; gap: 8px; }
+  .group { display: grid; gap: 6px; }
+  .group + .group { padding-top: 12px; border-top: 1px solid var(--map-line); }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .setting-row > :first-child { min-width: 0; }
+  .select-mark { padding: 3px 8px; border: 1px solid var(--map-line); border-radius: 4px; white-space: nowrap; }
+  .switch-mark { display: inline-flex; align-items: center; justify-content: flex-end; padding: 3px; width: 28px; height: 16px; border-radius: 99px; background: var(--map-ink); flex: none; }
+  .switch-mark::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--map-paper); }
+  .toast { border-top: 1px solid var(--map-line); padding-top: 12px; text-align: center; }
+  .scope { display: grid; gap: 10px; padding-top: 16px; }
+  .scope-row { display: grid; gap: 3px; }
+  .state-section { border-top: 1px solid var(--map-line); padding-top: 18px; display: grid; gap: 12px; }
+  .state-grid { display: grid; grid-template-columns: 1.12fr 1fr; gap: 24px; }
+  .state-grid > div { min-width: 0; display: grid; gap: 7px; align-content: start; }
+  .state { display: flex; flex-wrap: wrap; gap: 0 6px; }
+  .note { display: grid; gap: 5px; border-left: 2px solid var(--map-line); padding-left: 10px; }
+  @media (max-width: 590px) {
+    .columns, .state-grid { grid-template-columns: 1fr; gap: 24px; }
+    .chrome { align-items: start; flex-wrap: wrap; }
+    .address { flex-basis: 120px; }
+    .entry-route { text-align: left; }
+    .screen-body { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<div id="interface-map">
+  <section aria-label="Вход из Chrome">
+    <div class="chrome">
+      <span class="small dim">Панель Chrome</span>
+      <span class="address small">github.com/…</span>
+      <div class="icon-entry"><span class="entry-mark" aria-hidden="true">A文</span><span class="small">Иконка<br>расширения</span></div>
+    </div>
+    <div class="entry-route small">Нажатие → отдельная вкладка настроек. Всплывающего окна нет.</div>
+  </section>
+
+  <div class="columns">
+    <section aria-labelledby="github-heading">
+      <div class="caption"><h2 id="github-heading">На странице GitHub</h2><span class="small dim">Ежедневное использование</span></div>
+      <figure class="screen" aria-label="Схематичное расположение элементов на GitHub">
+        <div class="screen-bar small">GitHub · репозиторий · пул-реквест</div>
+        <div class="screen-body">
+          <div class="repo-tabs small dim">Conversation · Commits · Files changed</div>
+          <div class="title-line">
+            <span>Переведённый заголовок PR</span>
+            <span class="small dim">На месте исходного заголовка.<br>Оригинал — при наведении.</span>
+          </div>
+          <div class="block">
+            <div class="author small dim">Автор · описание PR</div>
+            <div class="translation-label"><span>🌐 Перевод: en → ru</span><span class="action">Показать оригинал</span></div>
+            <div class="content-sample">
+              <span>Переведённый текст</span>
+              <div class="skeleton" aria-hidden="true"></div><div class="skeleton short" aria-hidden="true"></div>
+              <div class="protected">code · @mention · #123 · link</div>
+            </div>
+          </div>
+          <div class="block">
+            <div class="author small dim">Комментарий / комментарий ревью</div>
+            <div class="translation-label"><span>🌐 Перевод: en → ru</span><span class="action">Показать оригинал</span></div>
+            <div class="content-sample"><div class="skeleton" aria-hidden="true"></div><div class="skeleton medium" aria-hidden="true"></div></div>
+          </div>
+          <div class="page-control">
+            <span class="floating-button">🌐 Показать оригинал</span>
+            <span class="small dim">Закреплена справа снизу.<br>Управляет всей страницей.</span>
+          </div>
+        </div>
+      </figure>
+      <div class="scope">
+        <div class="scope-row"><h3>PR · все вкладки</h3><p class="small dim">Название, описание, обсуждение, ревью и коммиты.</p></div>
+        <div class="scope-row"><h3>Список коммитов · отдельный коммит</h3><p class="small dim">Заголовки и описания заменяются переводом. Оригинал — при наведении; отдельной строки управления нет.</p></div>
+        <div class="scope-row"><h3>Репозиторий · папка · .md-файл</h3><p class="small dim">Над текстом README — такая же строка перевода и переключения. Кнопка справа снизу — при наличии README-блока и включённой настройке.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="settings-heading">
+      <div class="caption"><h2 id="settings-heading">Настройки</h2><span class="small dim">Отдельная вкладка</span></div>
+      <figure class="screen" aria-label="Структура текущей страницы настроек, все переключатели по умолчанию включены">
+        <div class="screen-bar small">options.html · одна колонка</div>
+        <div class="screen-body">
+          <div><h3>Aspid Translator for GitHub</h3><p class="small dim">Логотип и описание расширения</p></div>
+          <div class="section">
+            <h3>Перевод</h3>
+            <div class="setting-row small"><span>Язык перевода</span><span class="select-mark">Русский⌄</span></div>
+            <div class="setting-row small"><span>Переводить автоматически</span><span class="switch-mark" aria-label="Включено"></span></div>
+          </div>
+          <div class="section">
+            <div class="setting-row"><h3>Что переводить</h3><span class="small dim">7 из 7</span></div>
+            <div class="group small">
+              <h3>Пул-реквесты</h3>
+              <div class="setting-row"><span>Название</span><span class="switch-mark" aria-label="Включено"></span></div>
+              <div class="setting-row"><span>Описание</span><span class="switch-mark" aria-label="Включено"></span></div>
+              <div class="setting-row"><span>Комментарии в обсуждении</span><span class="switch-mark" aria-label="Включено"></span></div>
+              <div class="setting-row"><span>Комментарии к коду (ревью)</span><span class="switch-mark" aria-label="Включено"></span></div>
+            </div>
+            <div class="group small">
+              <h3>Коммиты</h3>
+              <div class="setting-row"><span>Заголовки</span><span class="switch-mark" aria-label="Включено"></span></div>
+              <div class="setting-row"><span>Описания</span><span class="switch-mark" aria-label="Включено"></span></div>
+            </div>
+            <div class="group small">
+              <h3>Файлы</h3>
+              <div class="setting-row"><span>README и .md-файлы</span><span class="switch-mark" aria-label="Включено"></span></div>
+            </div>
+          </div>
+          <div class="section"><h3>Сервис перевода</h3><span class="small">Встроенный переводчик Chrome</span><span class="small dim">Сейчас один сервис, выбор скрыт.</span></div>
+          <div class="toast small">✓ Сохранено<br><span class="dim">Уведомление снизу на 3 секунды</span></div>
+        </div>
+      </figure>
+      <div class="scope small dim">
+        <p>Изменения сохраняются сразу и применяются в открытых вкладках GitHub.</p>
+        <p>По умолчанию язык берётся из предпочтений браузера. Язык интерфейса настроек следует языку перевода.</p>
+        <p>Настройки следуют светлой / тёмной теме системы; элементы на GitHub используют тему GitHub.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="state-section" aria-labelledby="states-heading">
+    <h2 id="states-heading">Состояния существующих элементов</h2>
+    <div class="state-grid small">
+      <div>
+        <h3>Кнопка справа снизу</h3>
+        <div class="state">Ручной режим → <span>«Перевести»</span></div>
+        <div class="state">Первый запуск пары языков → <span>«Скачать модель перевода»</span></div>
+        <div class="state">Загрузка → <span>«Загрузка модели N%»</span></div>
+        <div class="state">Обработка → <span>«Перевожу… (N)»</span></div>
+        <div class="state">Готово → <span>«Показать оригинал» ⇄ «Показать перевод»</span></div>
+      </div>
+      <div>
+        <h3>Строка над текстовым блоком</h3>
+        <div class="state">Обработка → <span>«Перевожу…»</span></div>
+        <div class="state">Нужна модель → <span>«Скачать»</span></div>
+        <div class="state">Перевод ⇄ оригинал → <span>языки + действие</span></div>
+        <div class="state">Ошибка перевода → <span>причина + «Повторить»</span></div>
+        <div class="state">Ошибка скачивания → <span>причина</span></div>
+      </div>
+    </div>
+    <div class="note small dim"><p>Переключатель над блоком действует только на этот блок; плавающая кнопка — на все переводы страницы.</p><p>Код, ссылки, упоминания и номера задач сохраняются. Если текст пропущен или не изменился, строка перевода не показывается.</p></div>
+  </section>
+</div>
+</body>
+</html>

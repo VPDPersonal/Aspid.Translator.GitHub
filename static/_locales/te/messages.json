@@ -244,5 +244,49 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "అన్ని అసలు పాఠాలను చూపించు",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "అన్నింటినీ అనువదించు",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "రిపోజిటరీ",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "రిపోజిటరీ వివరణ (About)",
+    "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "ఇతర GitHub పేజీలు",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "సమస్యలు (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "PR మరియు సమస్యల జాబితాలు",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "విడుదలలు",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "చర్చలు",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "హోమ్ మరియు ఫీడ్ (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }

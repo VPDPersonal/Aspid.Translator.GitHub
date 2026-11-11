@@ -244,5 +244,49 @@
         "content": "$2"
       }
     }
+  },
+  "fabShowOriginals": {
+    "message": "Visa alla original",
+    "description": "Floating button: show every translated element in its original language, resetting local choices."
+  },
+  "fabTranslateAll": {
+    "message": "Översätt allt",
+    "description": "Floating button: show translations for the whole page, resetting local choices."
+  },
+  "settingsGroupRepository": {
+    "message": "Kodarkiv",
+    "description": "What to translate: repository metadata group."
+  },
+  "partAbout": {
+    "message": "Beskrivning av kodarkivet (About)",
+    "description": "Switch for the repository description in the About sidebar."
+  },
+  "settingsGroupPages": {
+    "message": "Andra GitHub-sidor",
+    "description": "Settings group for additional GitHub pages."
+  },
+  "partIssues": {
+    "message": "Ärenden (Issues)",
+    "description": "Switch for Issues content translation."
+  },
+  "partLists": {
+    "message": "Listor med PR och ärenden",
+    "description": "Switch for Lists content translation."
+  },
+  "partReleases": {
+    "message": "Utgåvor",
+    "description": "Switch for Releases content translation."
+  },
+  "partDiscussions": {
+    "message": "Diskussioner",
+    "description": "Switch for Discussions content translation."
+  },
+  "partWiki": {
+    "message": "Wiki",
+    "description": "Switch for Wiki content translation."
+  },
+  "partFeed": {
+    "message": "Startsida och flöde (Home / Feed)",
+    "description": "Switch for Feed content translation."
   }
 }
