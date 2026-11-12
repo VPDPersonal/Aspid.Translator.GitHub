@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import { setImmediate } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { build } from 'esbuild';
 
 const bridge = await readFile(new URL('../src/bridge.js', import.meta.url), 'utf8');
 const bundled = await build({
-  entryPoints: [new URL('../src/page-bridge.js', import.meta.url).pathname],
+  entryPoints: [fileURLToPath(new URL('../src/page-bridge.js', import.meta.url))],
   bundle: true, write: false, format: 'iife', globalName: 'client', platform: 'browser',
 });
 const client = bundled.outputFiles[0].text;
