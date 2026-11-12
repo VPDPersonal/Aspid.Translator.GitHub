@@ -144,12 +144,20 @@ Switch to the original for that comment with one click, and
 
 ## Development
 
+Use Node.js 22.17 or newer and an installed desktop Chrome.
+
 Run `npm run watch` while developing, then press the reload button on the extension card
 in `chrome://extensions`.
 
 Run `npm test` for the DOM integration suite. It uses a translation stand-in and an
 installed Chrome executable; set `CHROME_PATH` to override the default macOS path.
 Check Chrome's real translation models and personalized Home/Feed layouts manually.
+
+Run `npm run check` to run the tests, build the Web Store archive and validate
+its manifest, permissions, localized messages, icons, fonts and licenses.
+To validate an existing archive after `npm run zip`, run `npm run validate`.
+GitHub Actions runs these checks on Linux, macOS and Windows and keeps the
+validated Linux ZIP as an artifact. Model downloads still need a separate manual check.
 
 | Path | Role |
 |---|---|
