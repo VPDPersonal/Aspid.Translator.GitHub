@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Kezdőlap és hírfolyam (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "a fordító nem válaszol; próbálja újra",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

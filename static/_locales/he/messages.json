@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "דף הבית והעדכונים (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "המתרגם הפסיק להגיב; נסו שוב",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

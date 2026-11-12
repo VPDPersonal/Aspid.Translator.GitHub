@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "หน้าหลักและฟีด (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "ตัวแปลภาษาไม่ตอบสนอง โปรดลองอีกครั้ง",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

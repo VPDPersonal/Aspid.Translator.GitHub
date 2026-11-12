@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "முகப்பு மற்றும் ஊட்டம் (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "மொழிபெயர்ப்பான் பதிலளிக்கவில்லை; மீண்டும் முயற்சிக்கவும்",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

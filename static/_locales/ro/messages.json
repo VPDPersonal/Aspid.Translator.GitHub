@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Acasă și flux (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "traducătorul nu mai răspunde; încercați din nou",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

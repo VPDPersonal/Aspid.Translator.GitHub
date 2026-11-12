@@ -5,107 +5,153 @@
   if (window.__ghtBridge) return;
   window.__ghtBridge = true;
 
-  let detectorPromise = null;
-  const translatorPromises = new Map();
-
+  let detector = null;
+  const translators = new Map();
+  const requests = new Map();
   const emit = (type, payload) =>
     window.dispatchEvent(new CustomEvent(type, { detail: JSON.stringify(payload) }));
-
   const monitor = (m) =>
     m.addEventListener('downloadprogress', (event) => emit('ght:progress', { loaded: event.loaded }));
 
   function unsupported(api) {
-    // The content script shows its own localized text for this error name.
     const error = new Error(`${api} API is not available in this browser: it needs desktop Chrome 138 or newer.`);
     error.name = 'Unsupported';
     return error;
   }
 
-  // create() must be called synchronously inside a user gesture when a model needs a download,
-  // so these helpers start the call before their first await.
-  function getDetector() {
-    if (!('LanguageDetector' in self)) return Promise.reject(unsupported('Language Detector'));
-    detectorPromise ??= LanguageDetector.create({ monitor }).catch((error) => {
-      detectorPromise = null;
+  // Each cached instance owns its creation signal, so cancellation can stop a hung create()
+  // and destroy a ready instance without affecting a newer replacement in the cache.
+  function entry(create, forget) {
+    const controller = new AbortController();
+    const value = { controller, promise: null };
+    value.promise = create(controller.signal).catch((error) => {
+      forget(value);
       throw error;
     });
-    return detectorPromise;
+    return value;
+  }
+
+  function forgetDetector(value) {
+    if (detector !== value) return false;
+    detector = null;
+    return true;
+  }
+
+  function forgetTranslator(key, value) {
+    if (translators.get(key) !== value) return false;
+    return translators.delete(key);
+  }
+
+  // Start create() before the first await to preserve a click's user activation.
+  function getDetector() {
+    if (!('LanguageDetector' in self)) throw unsupported('Language Detector');
+    return detector ??= entry((signal) => LanguageDetector.create({ monitor, signal }), forgetDetector);
   }
 
   function getTranslator(sourceLanguage, targetLanguage) {
-    if (!('Translator' in self)) return Promise.reject(unsupported('Translator'));
+    if (!('Translator' in self)) throw unsupported('Translator');
     const key = `${sourceLanguage}>${targetLanguage}`;
-    if (!translatorPromises.has(key)) {
-      const promise = Translator.create({ sourceLanguage, targetLanguage, monitor }).catch((error) => {
-        translatorPromises.delete(key);
-        throw error;
-      });
-      translatorPromises.set(key, promise);
+    if (!translators.has(key)) {
+      translators.set(key, entry(
+        (signal) => Translator.create({ sourceLanguage, targetLanguage, monitor, signal }),
+        (value) => forgetTranslator(key, value),
+      ));
     }
-    return translatorPromises.get(key);
+    return translators.get(key);
   }
 
-  // An abort, a missing user gesture or an input over the quota says nothing about the instance.
   const KEEP_INSTANCE = new Set(['AbortError', 'NotAllowedError', 'QuotaExceededError']);
 
-  // Calls `use` with the instance from the cached `promise`. After the on-device service restarts,
-  // for example while another language pack downloads, the instance fails every call, so a failed
-  // call drops it from the cache through `forget` and the next call creates a fresh one. `forget`
-  // returns false when the cache no longer holds `promise`.
-  async function withInstance(promise, use, forget) {
-    const instance = await promise;
+  async function withInstance(value, use, forget, signal) {
+    const discard = () => {
+      if (forget()) value.controller.abort();
+    };
+    signal.addEventListener('abort', discard, { once: true });
     try {
+      signal.throwIfAborted();
+      const instance = await value.promise;
+      signal.throwIfAborted();
       return await use(instance);
     } catch (error) {
-      if (!KEEP_INSTANCE.has(error?.name) && forget()) instance.destroy();
+      if (!KEEP_INSTANCE.has(error?.name)) discard();
       throw error;
+    } finally {
+      signal.removeEventListener('abort', discard);
     }
+  }
+
+  function useDetector(signal, use) {
+    const value = getDetector();
+    return withInstance(value, use, () => forgetDetector(value), signal);
+  }
+
+  function useTranslator({ source, target }, signal, use) {
+    const value = getTranslator(source, target);
+    return withInstance(value, use, () => forgetTranslator(`${source}>${target}`, value), signal);
   }
 
   const handlers = {
-    async 'detector.prepare'() {
-      await getDetector();
-      return true;
-    },
-    async 'detector.detect'({ text }) {
-      const promise = getDetector();
-      const results = await withInstance(promise, (detector) => detector.detect(text), () => {
-        if (detectorPromise !== promise) return false;
-        detectorPromise = null;
-        return true;
-      });
+    'detector.prepare': (_, signal) => useDetector(signal, () => true),
+    'detector.detect': ({ text }, signal) => useDetector(signal, async (instance) => {
+      const results = await instance.detect(text, { signal });
       return results.slice(0, 3).map((r) => ({ lang: r.detectedLanguage, confidence: r.confidence }));
-    },
-    async 'translator.prepare'({ source, target }) {
-      await getTranslator(source, target);
-      return true;
-    },
-    async 'translator.translate'({ source, target, texts }) {
-      const promise = getTranslator(source, target);
-      const key = `${source}>${target}`;
-      return withInstance(promise, async (translator) => {
-        const out = [];
-        for (const text of texts) out.push(await translator.translate(text));
-        return out;
-      }, () => translatorPromises.get(key) === promise && translatorPromises.delete(key));
-    },
+    }),
+    'translator.prepare': (args, signal) => useTranslator(args, signal, () => true),
+    'translator.translate': (args, signal, activity) => useTranslator(args, signal, async (instance) => {
+      const out = [];
+      for (const text of args.texts) {
+        signal.throwIfAborted();
+        out.push(await instance.translate(text, { signal }));
+        activity(); // A large README can take time while still making progress.
+      }
+      return out;
+    }),
   };
 
-  window.addEventListener('ght:req', (event) => {
-    let request;
+  function payload(event) {
     try {
-      request = JSON.parse(event.detail);
+      const value = JSON.parse(event.detail);
+      return value && typeof value === 'object' ? value : null;
     } catch {
-      return;
+      return null;
     }
-    if (!Object.hasOwn(handlers, request.op)) return;
-    handlers[request.op](request.args ?? {}).then(
-      (result) => emit('ght:res', { id: request.id, result }),
-      (error) => emit('ght:res', {
-        id: request.id,
-        error: error?.message || String(error),
-        code: error?.name === 'NotAllowedError' ? 'activation' : error?.name,
-      }),
-    );
+  }
+
+  window.addEventListener('ght:cancel', (event) => {
+    const request = payload(event);
+    if (!request) return;
+    const controller = requests.get(request.id);
+    requests.delete(request.id);
+    controller?.abort();
+  });
+
+  window.addEventListener('ght:req', (event) => {
+    const request = payload(event);
+    if (!request || !Number.isSafeInteger(request.id) || requests.has(request.id)
+      || !Object.hasOwn(handlers, request.op)) return;
+    const controller = new AbortController();
+    requests.set(request.id, controller);
+    // Calling the handler directly keeps user activation; Promise.resolve().then() would defer it.
+    let result;
+    try {
+      result = handlers[request.op](request.args ?? {}, controller.signal,
+        () => emit('ght:activity', { id: request.id }));
+    } catch (error) {
+      result = Promise.reject(error);
+    }
+    Promise.resolve(result).then(
+      (result) => {
+        if (!controller.signal.aborted) emit('ght:res', { id: request.id, result });
+      },
+      (error) => {
+        if (!controller.signal.aborted) emit('ght:res', {
+          id: request.id,
+          error: error?.message || String(error),
+          code: error?.name === 'NotAllowedError' ? 'activation' : error?.name,
+        });
+      },
+    ).finally(() => {
+      if (requests.get(request.id) === controller) requests.delete(request.id);
+    });
   });
 })();

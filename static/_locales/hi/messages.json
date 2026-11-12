@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "होम और फ़ीड (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "अनुवादक जवाब नहीं दे रहा है; फिर से कोशिश करें",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Головна та стрічка (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "перекладач не відповідає; спробуйте ще раз",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }
