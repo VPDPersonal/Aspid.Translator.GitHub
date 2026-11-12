@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Trang chủ và bảng tin (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "trình dịch không phản hồi; hãy thử lại",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Etusivu ja syöte (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "kääntäjä ei vastaa; yritä uudelleen",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

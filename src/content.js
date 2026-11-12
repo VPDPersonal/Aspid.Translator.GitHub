@@ -93,6 +93,7 @@ const state = {
   showOriginal: false,
   needsActivation: false,
   downloadProgress: null,
+  preparingModels: null,
   jobs: new Map(), // translated element -> job
   groups: new Map(), // comment, title, document or commit -> shared local control
   queue: [],
@@ -265,23 +266,35 @@ function retry(job) {
 
 // Must be called from a click handler: model downloads need a user gesture.
 function prepareModels(source = 'en') {
+  if (state.preparingModels) return;
   const { provider, settings: { target } } = state;
   // The detector is optional: without it detectLanguage() falls back to chrome.i18n.
   prepareDetector().catch(() => {});
   const download = provider.prepare && !sameLanguage(source, target) ? provider.prepare({ source, target }) : null;
-  Promise.resolve(download).then(
+  const preparation = Promise.resolve(download);
+  state.preparingModels = preparation;
+  for (const group of state.groups.values()) updateControl(group);
+  updateFab();
+  preparation.then(
     () => {
+      if (state.preparingModels !== preparation) return;
+      state.preparingModels = null;
+      state.downloadProgress = null;
       state.needsActivation = false;
       for (const job of state.jobs.values()) if (job.status === 'activation') retry(job);
       updateFab();
     },
     (error) => {
+      if (state.preparingModels !== preparation) return;
+      state.preparingModels = null;
+      state.downloadProgress = null;
       for (const job of state.jobs.values()) {
         if (job.status === 'activation') {
           job.errorText = t('labelDownloadFailed', error.message);
           updateControl(job.group);
         }
       }
+      updateFab();
     },
   );
 }
@@ -376,8 +389,8 @@ function updateControl(group) {
     const from = [...new Set(jobs.map(job => job.source).filter(Boolean))].map(code => languageName(code)).join(', ') || t('sourceUnknown');
     hint = group.showOriginal ? t('labelOriginal', from) : t('labelTranslated', from, languageName(state.settings.target));
   }
-  const downloading = activation && state.downloadProgress !== null;
-  if (downloading) text = hint = t('fabDownloading', Math.round(state.downloadProgress * 100));
+  const downloading = activation && (state.preparingModels || state.downloadProgress !== null);
+  if (downloading) text = hint = t('fabDownloading', Math.round((state.downloadProgress ?? 0) * 100));
   const scopeKey = group.kind === 'commit' || group.kind === 'directory' ? 'settingsGroupCommits'
     : group.kind === 'document' ? 'partReadme'
       : `part${jobs[0].kind.charAt(0).toUpperCase()}${jobs[0].kind.slice(1)}`;
@@ -463,7 +476,7 @@ function updateFab() {
   const busy = state.queue.length + state.running;
   const error = pageErrors()[0];
   let text;
-  if (state.downloadProgress !== null) text = t('fabDownloading', Math.round(state.downloadProgress * 100));
+  if (state.preparingModels || state.downloadProgress !== null) text = t('fabDownloading', Math.round((state.downloadProgress ?? 0) * 100));
   else if (!state.active) text = t('fabTranslate');
   else if (state.needsActivation) text = t('fabDownloadModel');
   else if (busy) text = t('fabTranslating', busy);
@@ -476,7 +489,8 @@ function updateFab() {
 }
 
 function onFabClick() {
-  if (!state.active || state.needsActivation) prepareModels();
+  const activation = [...state.jobs.values()].find(job => job.status === 'activation');
+  if (!state.active || state.needsActivation) prepareModels(activation?.source);
   if (!state.active) {
     start();
     return;
@@ -510,6 +524,8 @@ function start() {
 function stop() {
   state.active = false;
   state.needsActivation = false;
+  state.preparingModels = null;
+  state.downloadProgress = null;
   for (const job of state.jobs.values()) removeTranslation(job);
   state.jobs.clear();
   state.groups.clear();

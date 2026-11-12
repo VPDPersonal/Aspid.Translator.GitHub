@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "홈 및 피드 (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "번역기가 응답하지 않습니다. 다시 시도해 주세요",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "الرئيسية والموجز (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "توقف المترجم عن الاستجابة؛ حاول مرة أخرى",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

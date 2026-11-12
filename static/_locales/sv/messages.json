@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Startsida och flöde (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "översättaren svarar inte; försök igen",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

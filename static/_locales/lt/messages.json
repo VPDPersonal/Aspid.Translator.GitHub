@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Pradžia ir naujienos (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "vertėjas neatsako; bandykite dar kartą",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Domovská stránka a kanál (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "překladač přestal odpovídat; zkuste to znovu",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

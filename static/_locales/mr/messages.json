@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "मुख्यपृष्ठ आणि फीड (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "भाषांतरक प्रतिसाद देत नाही; पुन्हा प्रयत्न करा",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

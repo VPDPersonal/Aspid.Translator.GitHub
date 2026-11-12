@@ -23,7 +23,7 @@ before(async () => {
 });
 after(async () => browser?.close());
 
-async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto = true, detector = 'en', cld = 'en', parts } = {}) {
+async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto = true, detector = 'en', cld = 'en', target = 'ru', parts } = {}) {
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -41,12 +41,13 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
     return request.abort();
   });
   await page.goto(origin + path);
-  await page.evaluate(({ messages, mode, auto, detector, cld, parts }) => {
+  await page.evaluate(({ messages, mode, auto, detector, cld, target, parts }) => {
     window.__engineMode = mode;
-    window.__settings = { target: 'ru', auto, ...(parts && { parts }) };
+    window.__settings = { target, auto, ...(parts && { parts }) };
     window.__storageListeners = [];
     window.__requests = [];
     window.__translationSources = [];
+    window.__preparedSources = [];
     window.__cldCalls = 0;
     chrome.storage = {
       local: { get: async () => ({ settings: window.__settings }) },
@@ -74,6 +75,14 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
         else result = [{ lang: args.text.includes('Already Russian') ? 'ru' : detector, confidence: 1 }];
       }
       else if (op === 'translator.prepare') {
+        window.__preparedSources.push(args.source);
+        if (window.__engineMode === 'waiting-download') {
+          window.__finishDownload = () => {
+            window.__engineMode = 'ready';
+            window.dispatchEvent(new CustomEvent('ght:res', { detail: JSON.stringify({ id, result: true }) }));
+          };
+          return;
+        }
         if (window.__engineMode === 'download-error') error = 'Download failed';
         else window.__engineMode = 'ready';
       } else if (op === 'translator.translate') {
@@ -81,7 +90,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
         if (args.source === 'be') {
           error = 'Unsupported language pair';
           code = 'NotSupportedError';
-        } else if (['activation', 'download-error'].includes(window.__engineMode)) {
+        } else if (['activation', 'download-error', 'waiting-download'].includes(window.__engineMode)) {
           error = 'Activation needed';
           code = 'activation';
         } else if (window.__engineMode === 'error') error = 'Translation failed';
@@ -89,7 +98,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
       }
       window.dispatchEvent(new CustomEvent('ght:res', { detail: JSON.stringify({ id, result, error, code }) }));
     });
-  }, { messages, mode, auto, detector, cld, parts });
+  }, { messages, mode, auto, detector, cld, target, parts });
   await page.evaluate(() => import('/__asp__/src/content.js'));
   async function settled() {
     await page.waitForFunction(() => {
@@ -1011,4 +1020,35 @@ test('new page settings can disable translation and navigation restores original
     await page.evaluate(() => { history.pushState({}, '', '/owner/repo/settings'); window.dispatchEvent(new PopStateEvent('popstate')); });
     await page.waitForFunction(() => !document.querySelector('.ght-fab, .ght-toggle, [data-ght-clone], [data-ght-source]'));
   } finally { await page.close(); }
+});
+
+test('the page download control prepares the detected source when translating into English', async () => {
+  const { page, settled } = await fixture(comment('pullrequest-1', '你好，Hello'), { target: 'en', detector: 'zh', mode: 'activation' });
+  try {
+    await page.waitForSelector('.ght-toggle[data-state="activation"]');
+    await page.click('.ght-fab');
+    await settled();
+    assert.deepEqual(await page.evaluate(() => window.__preparedSources), ['zh']);
+  } finally {
+    await page.close();
+  }
+});
+
+test('model preparation shows immediate busy feedback and ignores duplicate page clicks', async () => {
+  const { page, settled } = await fixture(comment(), { mode: 'waiting-download' });
+  try {
+    await page.waitForSelector('.ght-toggle[data-state="activation"]');
+    await page.click('.ght-fab');
+    assert.match(await page.$eval('.ght-fab', el => el.textContent), /Downloading model 0%/);
+    assert.equal(await page.$eval('.ght-toggle', el => el.disabled), true);
+    await page.click('.ght-fab');
+    assert.deepEqual(await page.evaluate(() => window.__preparedSources), ['en']);
+    await page.evaluate(() => window.__finishDownload());
+    await page.waitForSelector('.ght-toggle[data-state="done"]');
+    await settled();
+    assert.equal(await page.$eval('.ght-toggle', el => el.disabled), false);
+    assert.doesNotMatch(await page.$eval('.ght-fab', el => el.textContent), /Downloading/);
+  } finally {
+    await page.close();
+  }
 });

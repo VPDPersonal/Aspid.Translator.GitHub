@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Početna i novosti (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "prevoditelj ne odgovara; pokušajte ponovno",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

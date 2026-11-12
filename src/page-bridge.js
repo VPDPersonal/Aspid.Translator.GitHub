@@ -10,15 +10,30 @@ const pending = new Map();
 let progressListener = null;
 let listening = false;
 
+// Detection must fall back promptly; model downloads get a separate, longer deadline.
+const TIMEOUTS = { 'detector.detect': 15000, 'translator.translate': 120000 };
+const DOWNLOAD_TIMEOUT = 15 * 60 * 1000;
+
+function payload(event) {
+  try {
+    const value = JSON.parse(event.detail);
+    return value && typeof value === 'object' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 // Listeners are added on first use, so importing this module has no side effects.
 function listen() {
   if (listening) return;
   listening = true;
   window.addEventListener('ght:res', (event) => {
-    const message = JSON.parse(event.detail);
+    const message = payload(event);
+    if (!message) return;
     const request = pending.get(message.id);
     if (!request) return;
     pending.delete(message.id);
+    clearTimeout(request.timer);
     if (message.error) {
       const text = message.code === 'Unsupported' ? t('errorUnsupported') : message.error;
       request.reject(Object.assign(new Error(text), { code: message.code }));
@@ -26,7 +41,16 @@ function listen() {
       request.resolve(message.result);
     }
   });
-  window.addEventListener('ght:progress', (event) => progressListener?.(JSON.parse(event.detail).loaded));
+  window.addEventListener('ght:progress', (event) => {
+    const message = payload(event);
+    if (typeof message?.loaded === 'number' && message.loaded >= 0 && message.loaded <= 1) {
+      progressListener?.(message.loaded);
+    }
+  });
+  window.addEventListener('ght:activity', (event) => {
+    const message = payload(event);
+    if (message) pending.get(message.id)?.arm();
+  });
 }
 
 // Dispatch is synchronous, so a call made inside a click handler keeps the user activation.
@@ -34,7 +58,17 @@ export function callBridge(op, args) {
   listen();
   return new Promise((resolve, reject) => {
     const id = ++seq;
-    pending.set(id, { resolve, reject });
+    const request = { resolve, reject, timer: null, arm: () => {
+      clearTimeout(request.timer);
+      request.timer = setTimeout(() => {
+        pending.delete(id);
+        reject(Object.assign(new Error(t('errorTimeout')), { code: 'TimeoutError' }));
+        window.dispatchEvent(new CustomEvent('ght:cancel', { detail: JSON.stringify({ id }) }));
+        progressListener?.(1); // Clear a stalled download indicator so Retry remains visible.
+      }, TIMEOUTS[op] ?? DOWNLOAD_TIMEOUT);
+    } };
+    pending.set(id, request);
+    request.arm();
     window.dispatchEvent(new CustomEvent('ght:req', { detail: JSON.stringify({ id, op, args }) }));
   });
 }

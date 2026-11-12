@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Strona główna i aktualności (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "tłumacz nie odpowiada; spróbuj ponownie",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

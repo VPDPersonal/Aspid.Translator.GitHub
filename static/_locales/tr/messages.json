@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Ana sayfa ve akış (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "çevirmen yanıt vermiyor; tekrar deneyin",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

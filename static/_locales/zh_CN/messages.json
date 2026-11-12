@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "主页和动态（Home / Feed）",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "翻译器未响应，请重试",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

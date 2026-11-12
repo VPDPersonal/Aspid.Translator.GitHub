@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Startpagina en feed (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "de vertaler reageert niet meer; probeer het opnieuw",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

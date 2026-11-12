@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "హోమ్ మరియు ఫీడ్ (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "అనువాదకం స్పందించడం లేదు; మళ్లీ ప్రయత్నించండి",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }

@@ -288,5 +288,9 @@
   "partFeed": {
     "message": "Αρχική και ροή (Home / Feed)",
     "description": "Switch for Feed content translation."
+  },
+  "errorTimeout": {
+    "message": "ο μεταφραστής δεν αποκρίνεται· δοκιμάστε ξανά",
+    "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   }
 }
