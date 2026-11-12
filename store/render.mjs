@@ -123,14 +123,15 @@ const SHOTS = {
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
-function launch(lang, extensions = false) {
+async function launch(lang, extensions = false) {
   return puppeteer.launch({
     executablePath: CHROME,
     headless: true,
     enableExtensions: extensions,
     userDataDir: `${PROFILE}-${lang}`,
     // Puppeteer turns off the components that download translation models.
-    ignoreDefaultArgs: ['--disable-features=Translate,AcceptCHFrame,MediaRouter,OptimizationHints,WebUIReloadButton,ProcessPerSiteUpToMainFrameThreshold,IsolateSandboxedIframes', '--disable-background-networking', '--disable-component-extensions-with-background-pages'],
+    ignoreDefaultArgs: (await puppeteer.defaultArgs()).filter(arg => arg.startsWith('--disable-features=')
+      || ['--disable-background-networking', '--disable-component-extensions-with-background-pages'].includes(arg)),
     // On macOS Chrome takes its UI language from AppleLanguages and ignores --lang.
     args: [`--lang=${lang}`, '-AppleLanguages', `(${lang})`, '--hide-scrollbars'],
   });
@@ -148,42 +149,19 @@ async function renderPromo() {
   await browser.close();
 }
 
-// Headless Chrome ships no language detection model, so pages get a stand-in that tells
-// languages apart by their script. Translation itself is done by Chrome's real Translator.
-function detectorStandIn() {
-  const count = (re, text) => (text.match(re) || []).length;
-  // The script with the most characters wins; one CJK character weighs about one word.
-  const guess = (text) => {
-    const han = count(/\p{Script=Han}/gu, text);
-    const kana = count(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu, text);
-    const scores = {
-      zh: han,
-      ja: kana >= 2 && kana * 10 >= han ? kana + han : 0,
-      ko: count(/\p{Script=Hangul}/gu, text),
-      ru: count(/\p{Script=Cyrillic}/gu, text) / 5,
-      en: count(/\p{Script=Latin}/gu, text) / 5,
-    };
-    const [best, score] = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
-    return score > 0 ? best : 'und';
-  };
-  class LanguageDetector {
-    static async availability() { return 'available'; }
-    static async create() { return new LanguageDetector(); }
-    async detect(text) { return [{ detectedLanguage: guess(text), confidence: 0.95 }]; }
-  }
-  Object.defineProperty(self, 'LanguageDetector', { value: LanguageDetector, configurable: true, writable: true });
-}
-
 // Waits until the floating button stops showing progress and no comment is loading.
 async function settle(page, timeout = 90000) {
   const start = Date.now();
   let quiet = 0;
+  let state;
   while (Date.now() - start < timeout) {
     await sleep(1000);
-    const state = await page.evaluate(() => ({
+    state = await page.evaluate(() => ({
       fab: document.querySelector('.ght-fab')?.textContent ?? '',
       loading: document.querySelectorAll('.ght-toggle[data-state="loading"]').length,
+      errors: [...document.querySelectorAll('.ght-toggle[data-state="error"]')].map(el => el.title),
     }));
+    if (state.errors.length) throw new Error(`Translation failed: ${state.errors.join('; ')}`);
     if (/model|модел/i.test(state.fab)) {
       await page.click('.ght-fab'); // a real click: Chrome downloads models only after a user gesture
       quiet = 0;
@@ -193,7 +171,7 @@ async function settle(page, timeout = 90000) {
       quiet = 0;
     }
   }
-  throw new Error(`${page.url()} is still translating after ${timeout / 1000} s`);
+  throw new Error(`${page.url()} is still translating after ${timeout / 1000} s: ${JSON.stringify(state)}`);
 }
 
 // Follows the page's data requests: GitHub fetches PR counters and diffstats after the page loads.
@@ -261,7 +239,6 @@ async function capturePage(page, extensionId, shot) {
     await ready(page, requests);
     return;
   }
-  await page.evaluateOnNewDocument(detectorStandIn);
   await page.goto(shot.url, { waitUntil: 'networkidle2', timeout: 60000 });
   await settle(page);
   // Everything is translated lazily, as it scrolls into view.
@@ -337,18 +314,22 @@ async function renderShots(only) {
     if (only && only !== lang) continue;
     await mkdir(join(ROOT, 'store/screenshots', lang), { recursive: true });
     const browser = await launch(set.lang, true);
-    const extensionId = await browser.installExtension(join(ROOT, 'dist'));
-    const setup = await browser.newPage();
-    await setup.goto(`chrome-extension://${extensionId}/options.html`);
-    await setup.evaluate((settings) => chrome.storage.local.set({ settings }), {
-      provider: 'builtin', target: set.target, auto: true, parts: ALL_PARTS,
-    });
-    await setup.close();
-    for (const shot of set.list) {
-      const image = await shoot(browser, extensionId, shot);
-      console.log(await frame(browser, image, shot, lang));
+    try {
+      const extensionId = await browser.installExtension(join(ROOT, 'dist'));
+      const setup = await browser.newPage();
+      await setup.goto(`chrome-extension://${extensionId}/options.html`);
+      await setup.evaluate((settings) => chrome.storage.local.set({ settings }), {
+        provider: 'builtin', target: set.target, auto: true, parts: ALL_PARTS,
+      });
+      await setup.close();
+      for (const shot of set.list) {
+        console.log(`Capturing ${lang}/${shot.name}`);
+        const image = await shoot(browser, extensionId, shot);
+        console.log(await frame(browser, image, shot, lang));
+      }
+    } finally {
+      await browser.close();
     }
-    await browser.close();
   }
 }
 

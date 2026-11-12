@@ -1,19 +1,22 @@
 # Privacy Policy
 
-**Aspid Translator for GitHub**, a Chrome extension. Last updated: October 15, 2026.
+**Aspid Translator for GitHub**, a Chrome extension. Last updated: November 12, 2026.
 
 ## Summary
 
-The extension does not collect, store or send any personal data. It has no servers, no analytics
-and no accounts. Text is translated on your device by Chrome.
+The extension processes GitHub page text only on your device. It does not collect that text,
+persist it or send it to a server. It has no servers, no analytics and no accounts.
 
 ## What the extension reads
 
-On `github.com` pages, the extension reads the text of pull requests, comments, commits and
-README files to translate it. That text is handed to Chrome's built-in Translator and
+On `github.com` pages, the extension reads rendered text in pull requests, issues, comments,
+commit messages, PR and issue lists, releases, Discussions, Compare commit messages, Wiki,
+READMEs, other rendered Markdown documents, repository About descriptions and signed-in
+Home/Feed content cards. That text is handed to Chrome's built-in Translator and
 LanguageDetector APIs and to its extension language detector (`chrome.i18n`), which run on your
 device. The translated text is shown on the page and is never saved or sent anywhere. Nothing is
-posted to GitHub: other people still see the original.
+posted to GitHub: other people still see the original. Translations remain in the tab's
+memory while its content is displayed; the extension does not persist a translation history.
 
 The extension does not run on any other site.
 
@@ -21,6 +24,8 @@ The extension does not run on any other site.
 
 Your settings: the target language, whether to translate automatically and which parts of a page
 to translate. They are kept in `chrome.storage.local` on your device and never leave it.
+You can change these settings on the extension's settings page. Removing the extension
+removes its stored settings. Chrome manages downloaded language models separately.
 
 ## Network requests
 

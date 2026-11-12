@@ -107,6 +107,7 @@ Requires Chrome 138 or newer on desktop.
 
 To build the archive for the Chrome Web Store, run `npm run zip`.
 It goes to `release/aspid-github-translator-<version>.zip`.
+Before publishing, complete the [public release checklist](Documentation/RELEASE.md).
 
 ## Privacy
 
@@ -141,6 +142,13 @@ Not yet. The extension relies on Chrome's built-in Translator API.
 **A translation is wrong. What can I do?**
 Switch to the original for that comment with one click, and
 [open an issue](https://github.com/VPDPersonal/Aspid.GitHub.Translator/issues) with a link to the page.
+Include your Chrome and extension versions, the source and target languages, and steps
+to reproduce. Use a public example or a redacted screenshot; keep private repository text private.
+
+**What if a model does not download?**
+Check your internet connection, then use the download control again. Initial downloads
+need a click and may take time. Language-pair availability depends on Chrome. If a request
+fails, use its Retry control and include the error message when reporting a problem.
 
 ## Development
 
