@@ -158,6 +158,8 @@ its manifest, permissions, localized messages, icons, fonts and licenses.
 To validate an existing archive after `npm run zip`, run `npm run validate`.
 GitHub Actions runs these checks on Linux, macOS and Windows and keeps the
 validated Linux ZIP as an artifact. Model downloads still need a separate manual check.
+The Linux matrix also checks Chrome 138, and the workflow rejects high-severity tooling
+dependency advisories with `npm audit`.
 
 | Path | Role |
 |---|---|

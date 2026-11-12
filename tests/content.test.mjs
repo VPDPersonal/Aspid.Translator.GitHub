@@ -13,7 +13,8 @@ before(async () => {
   browser = await puppeteer.launch({
     executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     headless: true,
-    args: process.env.CI ? ['--no-sandbox'] : [],
+    args: process.env.CI ? ['--no-sandbox', '--disable-gpu'] : [],
+    protocolTimeout: 30000,
   });
 });
 after(async () => browser?.close());
