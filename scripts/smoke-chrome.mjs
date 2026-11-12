@@ -39,10 +39,19 @@ try {
   const settings = await browser.newPage();
   await settings.goto(`chrome-extension://${extensionId}/options.html`);
   for (const scenario of scenarios) {
-    const result = { ...scenario, passed: false, pageErrors: [] };
+    const result = { ...scenario, passed: false, modelClicks: 0, pageErrors: [] };
     report.cases.push(result);
     await settings.evaluate(target => chrome.storage.local.set({ settings: { target, auto: true } }), scenario.target);
     const page = await browser.newPage();
+    await page.evaluateOnNewDocument(() => {
+      window.__aspSmokePreparations = [];
+      window.addEventListener('ght:req', event => {
+        try {
+          const { op, args } = JSON.parse(event.detail);
+          if (op === 'translator.prepare') window.__aspSmokePreparations.push({ source: args.source, target: args.target });
+        } catch { /* Ignore unrelated malformed events. */ }
+      });
+    });
     page.on('pageerror', error => result.pageErrors.push(error.message));
     await page.setViewport({ width: 1280, height: 900 });
     console.log(`Opening ${scenario.url}, target ${scenario.target}`);
@@ -65,6 +74,7 @@ try {
       result.state = await stateOf(page);
       if (/model|модел/i.test(result.state.button) && !/%/.test(result.state.button)) {
         await page.click('.ght-fab');
+        result.modelClicks++;
         console.log('Clicked the model download control');
       }
       if (result.state.translated && !result.state.loading && !/…|%/.test(result.state.button)) {
@@ -73,6 +83,7 @@ try {
       await delay(1000);
     }
     console.log(JSON.stringify(result.state));
+    result.preparedPairs = await page.evaluate(() => window.__aspSmokePreparations);
     assert.ok(quiet >= 2, 'Translation did not settle within three minutes');
     assert.equal(result.state.errors.length, 0, 'Translation controls must not show errors');
     assert.ok(result.state.translated > 0, 'At least one element must have a real translation');

@@ -5,11 +5,12 @@ repeat the release gates on the final commit and the uploaded Web Store package.
 
 ## Candidate and automated checks
 
-The combined working-tree candidate contains runtime PR #15 (`0892b7c`) and release
-validation PR #16 (`74407e8`). The merge applied without conflicts. The later
-`35565bb` change pins only the hosted macOS runner; it does not change runtime code.
+The combined working-tree candidate contains runtime PR #15 (`c836744`) and release
+validation PR #16 (`6c17f75`). The merge applied without conflicts. The later
+`05ac755` change adjusts only hosted Chrome selection and test logging; it does not
+change extension runtime code.
 
-- `CI=true npm run check` on macOS: 64 tests passed.
+- `CI=true npm run check` on macOS: 65 tests passed.
 - Release preflight: version 0.1.0, 79 packaged files and 39 locales validated.
 - `npm audit --audit-level=high`: zero vulnerabilities with Puppeteer 25.17.0.
 - Workflow lint and local README path checks passed.
@@ -29,8 +30,9 @@ extension-detector stand-ins were installed.
 - The page-wide control restored originals and then restored translations.
 - After model download, both language pairs also translated sample text offline through
   Chrome's native Translator API.
-- Initial model setup required repeated download-control clicks; the smoke runner records
-  those actions in its console output. The test does not establish a one-click cold start.
+- Each language pair started successfully with one download-control click. The smoke
+  report records the click count and prepared source/target pairs. Model preparation now
+  shows busy feedback immediately, before Chrome sends a progress event.
 - Browser page errors: none in the recorded successful runs.
 
 `node scripts/smoke-chrome.mjs` writes a machine-readable report to
@@ -40,8 +42,10 @@ The script deletes only its own temporary browser profile after the check.
 
 ## Store materials
 
-All ten English and Russian screenshots were regenerated from the installed candidate
-using its normal detection path, then visually inspected. Their dimensions are 1280×800.
+All ten English and Russian screenshots were regenerated from installed runtime
+`0892b7c` using its normal detection path, then visually inspected. The subsequent
+`c836744` change affects preparation feedback; the settled controls shown in these
+images are unchanged. Their dimensions are 1280×800.
 Both promo tiles were rendered and inspected at 440×280 and 1400×560.
 
 Two capture attempts needed a fresh-page retry: GitHub's browser-stats request failed on
