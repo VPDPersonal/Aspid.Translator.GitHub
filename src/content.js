@@ -476,7 +476,8 @@ function updateFab() {
 }
 
 function onFabClick() {
-  if (!state.active || state.needsActivation) prepareModels();
+  const activation = [...state.jobs.values()].find(job => job.status === 'activation');
+  if (!state.active || state.needsActivation) prepareModels(activation?.source);
   if (!state.active) {
     start();
     return;
