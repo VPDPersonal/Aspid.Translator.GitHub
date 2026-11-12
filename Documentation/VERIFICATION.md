@@ -14,10 +14,16 @@ change extension runtime code.
 - Release preflight: version 0.1.0, 79 packaged files and 39 locales validated.
 - `npm audit --audit-level=high`: zero vulnerabilities with Puppeteer 25.17.0.
 - Workflow lint and local README path checks passed.
-- Chrome 138 DOM integration and package validation passed on Linux in PR #16.
-- Stable Chrome jobs passed on Linux and Windows in PR #16.
-- Hosted macOS browser startup needs a green CI run before release; local macOS passes
-  do not substitute for that run. See the current checks on PR #16.
+- All four jobs passed on PR #16 head `05ac755`: Linux with Chrome 138 and stable Chrome,
+  Windows with stable Chrome, and macOS 15 Intel with the runner-installed Google Chrome.
+  Each job ran 54 tests, reported zero dependency vulnerabilities and validated the archive.
+  The 65-test result above covers the separate runtime PR combined with these checks.
+- The hosted macOS job used Google Chrome 151.0.7922.174. Linux's minimum-version job used
+  Chrome for Testing 138.0.7204.183; its stable job used 157.0.8103.78. Real-model checks
+  below separately used Google Chrome 157 on macOS.
+- CI evidence: [successful run](https://github.com/VPDPersonal/Aspid.GitHub.Translator/actions/runs/43217497475).
+  Downloaded Chrome for Testing stalled during hosted macOS CDP startup; the green macOS
+  job uses the runner's installed browser and fails shared setup promptly if CDP is unavailable.
 
 ## Installed extension and actual models
 
