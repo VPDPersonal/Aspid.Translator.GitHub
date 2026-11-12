@@ -152,6 +152,7 @@ async function writeZip() {
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await cp('static', 'dist', { recursive: true });
+await cp('LICENSE', 'dist/LICENSE');
 await writeManifest();
 await renderIcons();
 await copyFonts();

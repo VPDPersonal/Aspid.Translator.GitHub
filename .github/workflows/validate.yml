@@ -1,0 +1,60 @@
+name: Validate extension
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Test and package (${{ matrix.os }}, Chrome ${{ matrix.chrome }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep the macOS image and architecture fixed for reproducible browser startup.
+        os: [ubuntu-latest, windows-latest]
+        chrome: [stable]
+        include:
+          - os: macos-15-intel
+            chrome: system
+          - os: ubuntu-latest
+            chrome: '138'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2
+        if: runner.os != 'macOS'
+        id: chrome
+        with:
+          chrome-version: ${{ matrix.chrome }}
+          install-dependencies: true
+      - name: Check the runner's Google Chrome on macOS
+        if: runner.os == 'macOS'
+        run: '"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version'
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - name: Test and validate the release archive
+        run: npm run check
+        env:
+          CHROME_PATH: ${{ runner.os == 'macOS' && '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' || steps.chrome.outputs.chrome-path }}
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: runner.os == 'Linux' && matrix.chrome == 'stable'
+        with:
+          name: asp-github-translator-${{ github.sha }}
+          path: release/*.zip
+          if-no-files-found: error
+          retention-days: 14
