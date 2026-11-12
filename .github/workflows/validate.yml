@@ -21,9 +21,11 @@ jobs:
       fail-fast: false
       matrix:
         # Keep the macOS image and architecture fixed for reproducible browser startup.
-        os: [ubuntu-latest, macos-15-intel, windows-latest]
+        os: [ubuntu-latest, windows-latest]
         chrome: [stable]
         include:
+          - os: macos-15-intel
+            chrome: system
           - os: ubuntu-latest
             chrome: '138'
     runs-on: ${{ matrix.os }}
@@ -35,16 +37,20 @@ jobs:
           node-version: '22'
           cache: npm
       - uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2
+        if: runner.os != 'macOS'
         id: chrome
         with:
           chrome-version: ${{ matrix.chrome }}
           install-dependencies: true
+      - name: Check the runner's Google Chrome on macOS
+        if: runner.os == 'macOS'
+        run: '"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version'
       - run: npm ci
       - run: npm audit --audit-level=high
       - name: Test and validate the release archive
         run: npm run check
         env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          CHROME_PATH: ${{ runner.os == 'macOS' && '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' || steps.chrome.outputs.chrome-path }}
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: runner.os == 'Linux' && matrix.chrome == 'stable'
         with:

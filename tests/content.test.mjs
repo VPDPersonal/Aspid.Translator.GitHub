@@ -15,6 +15,7 @@ before(async () => {
     headless: true,
     args: process.env.CI ? ['--no-sandbox', '--disable-gpu'] : [],
     protocolTimeout: 30000,
+    dumpio: Boolean(process.env.CI),
   });
   // Fail the shared setup once if Chrome cannot initialize CDP, rather than timing out per fixture.
   const page = await browser.newPage();
