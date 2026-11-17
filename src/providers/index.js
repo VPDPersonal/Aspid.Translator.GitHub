@@ -30,10 +30,10 @@ import { builtin } from './builtin.js';
  * @property {boolean} plainText The engine translates code names (`Unity` becomes `единство`),
  *   so they are hidden behind placeholders before the call.
  * @property {number} concurrency How many page elements may be translated at once.
- * @property {(request: { texts: string[], source?: string, target: string }) =>
+ * @property {(request: { texts: string[], source?: string, target: string, signal?: AbortSignal }) =>
  *   Promise<{ translations: string[], sourceLanguage?: string }>} translate
  *   Rejects with `code: 'activation'` when a model download waits for a user gesture.
- * @property {(request: { source: string, target: string }) => Promise<unknown>} [prepare]
+ * @property {(request: { source: string, target: string, signal?: AbortSignal }) => Promise<unknown>} [prepare]
  *   Starts model downloads. It is called inside a click handler, so it must start its
  *   work before the first `await`.
  */

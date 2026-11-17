@@ -15,11 +15,11 @@ export const builtin = {
   plainText: true,
   concurrency: 1,
 
-  prepare: ({ source, target }) => callBridge('translator.prepare', { source, target }),
+  prepare: ({ source, target, signal }) => callBridge('translator.prepare', { source, target }, { signal }),
 
-  async translate({ texts, source, target }) {
+  async translate({ texts, source, target, signal }) {
     try {
-      return { translations: await callBridge('translator.translate', { source, target, texts }) };
+      return { translations: await callBridge('translator.translate', { source, target, texts }, { signal }) };
     } catch (error) {
       if (error.code === 'NotSupportedError') {
         error.message = t('errorPairUnsupported', languageName(source), languageName(target));

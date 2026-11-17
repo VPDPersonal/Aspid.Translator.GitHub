@@ -1,5 +1,5 @@
 import { t } from './i18n.js';
-import { loadSettings, languageName } from './settings.js';
+import { loadSettings, languageName, targetFor } from './settings.js';
 import {
   applyTranslation, cloneForTranslation, collectPlainSegments, collectSegments, hasLetters, linkEmbeds, placeEmbeds,
   protectNames, protectPrefix, stripTags, textOf,
@@ -94,6 +94,7 @@ const state = {
   needsActivation: false,
   downloadProgress: null,
   preparingModels: null,
+  preparationController: null,
   jobs: new Map(), // translated element -> job
   groups: new Map(), // comment, title, document or commit -> shared local control
   queue: [],
@@ -107,7 +108,7 @@ onDownloadProgress((loaded) => {
   updateFab();
 });
 
-const sameLanguage = (a, b) => a.split('-')[0].toLowerCase() === b.split('-')[0].toLowerCase();
+const sameLanguage = (a, b) => (targetFor(a) ?? a.toLowerCase()) === (targetFor(b) ?? b.toLowerCase());
 
 // ---------------------------------------------------------------------------------------------
 // Translation of one element.
@@ -118,6 +119,8 @@ const sameLanguage = (a, b) => a.split('-')[0].toLowerCase() === b.split('-')[0]
  */
 async function translateElement(job) {
   const { provider, settings: { target } } = state;
+  const { signal } = job.controller;
+  signal.throwIfAborted();
   const clone = cloneForTranslation(job.el);
   const segments = job.mode === 'plain' ? collectPlainSegments(clone) : collectSegments(clone);
   if (!segments.length) return null;
@@ -127,10 +130,11 @@ async function translateElement(job) {
   if (!hasLetters(sample)) return null;
   let detected = null;
   try {
-    detected = await detectLanguage(sample);
+    detected = await detectLanguage(sample, { signal });
   } catch (error) {
     if (provider.needsSource) throw error; // other engines detect the language themselves
   }
+  signal.throwIfAborted();
   if (detected && (detected.lang === 'und' || (sameLanguage(detected.lang, target) && detected.confidence >= 0.5))) {
     return null;
   }
@@ -150,7 +154,8 @@ async function translateElement(job) {
   const pending = segments.filter((segment) => hasLetters(stripTags(segment.text)));
   if (!pending.length) return null;
 
-  const result = await provider.translate({ texts: pending.map((segment) => segment.text), source, target });
+  const result = await provider.translate({ texts: pending.map((segment) => segment.text), source, target, signal });
+  signal.throwIfAborted();
   job.source ??= result.sourceLanguage;
 
   let changed = false;
@@ -197,6 +202,7 @@ function scan() {
       const job = {
         el, kind, mode: target.mode, status: 'pending', showOriginal: state.showOriginal,
         clone: null, embeds: [], source: null, text: '', errorText: null, group: null,
+        controller: new AbortController(), dirty: false,
       };
       state.jobs.set(el, job);
       el.setAttribute('data-ght-source', '');
@@ -269,8 +275,11 @@ function prepareModels(source = 'en') {
   if (state.preparingModels) return;
   const { provider, settings: { target } } = state;
   // The detector is optional: without it detectLanguage() falls back to chrome.i18n.
-  prepareDetector().catch(() => {});
-  const download = provider.prepare && !sameLanguage(source, target) ? provider.prepare({ source, target }) : null;
+  const controller = new AbortController();
+  state.preparationController = controller;
+  const { signal } = controller;
+  prepareDetector({ signal }).catch(() => {});
+  const download = provider.prepare && !sameLanguage(source, target) ? provider.prepare({ source, target, signal }) : null;
   const preparation = Promise.resolve(download);
   state.preparingModels = preparation;
   for (const group of state.groups.values()) updateControl(group);
@@ -439,6 +448,7 @@ function render(job) {
 }
 
 function removeTranslation(job) {
+  job.controller.abort();
   io.unobserve(job.el);
   if (job.clone) moveIds(job, false);
   placeEmbeds(job.embeds, false);
@@ -525,6 +535,8 @@ function stop() {
   state.active = false;
   state.needsActivation = false;
   state.preparingModels = null;
+  state.preparationController?.abort();
+  state.preparationController = null;
   state.downloadProgress = null;
   for (const job of state.jobs.values()) removeTranslation(job);
   state.jobs.clear();
@@ -572,7 +584,7 @@ function maintain() {
   if (!state.active) return;
   for (const job of [...state.jobs.values()]) {
     const settled = job.status === 'done' || job.status === 'skipped' || job.status === 'error';
-    if (!job.el.isConnected || (settled && textOf(job.el) !== job.text)) {
+    if (!job.el.isConnected || job.dirty || (settled && textOf(job.el) !== job.text)) {
       removeTranslation(job);
       state.jobs.delete(job.el);
     } else if (controlScope(job.el, job.kind).root !== job.group.root) {
@@ -602,7 +614,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (changed && state.pageKey) {
       const wasActive = state.active;
       stop();
-      if (wasActive || settings.auto) start();
+      if (previous.auto !== settings.auto ? settings.auto : wasActive || settings.auto) start();
+    } else if (state.pageKey && previous.auto !== settings.auto) {
+      if (!settings.auto) stop();
+      else if (!state.active) start();
     }
     syncFab();
     updateFab();
@@ -618,12 +633,25 @@ function applySettings(settings) {
   applySettings(await loadSettings());
   onLocationChange();
   const ownUI = node => (node.nodeType === 1 ? node : node.parentElement)?.closest('[data-ght-ui], [data-ght-clone], .ght-fab');
+  const movedEmbed = node => node.nodeType === 8 && node.nodeValue === 'ght-embed'
+    || node.nodeType === 1 && node.matches('.render-needs-enrichment');
   new MutationObserver(records => {
-    if (records.some(record => !ownUI(record.target) && !(record.type === 'childList'
-      && [...record.addedNodes, ...record.removedNodes].every(ownUI)))) scheduleMaintain();
+    let changed = false;
+    for (const record of records) {
+      if (ownUI(record.target)) continue;
+      const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+      if (target?.closest('.render-needs-enrichment')) continue;
+      if (record.type === 'childList'
+        && [...record.addedNodes, ...record.removedNodes].every(node => ownUI(node) || movedEmbed(node))) continue;
+      const source = target?.closest('[data-ght-source]');
+      const job = state.jobs.get(source);
+      if (job) job.dirty = true;
+      changed = true;
+    }
+    if (changed) scheduleMaintain();
   }).observe(document.body, {
     childList: true, subtree: true, characterData: true,
-    attributes: true, attributeFilter: ['hidden', 'aria-hidden', 'aria-pressed', 'class'],
+    attributes: true, attributeFilter: ['hidden', 'aria-hidden', 'aria-pressed', 'class', 'href', 'src', 'srcset', 'alt', 'title', 'checked', 'value', 'colspan', 'rowspan'],
   });
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);
