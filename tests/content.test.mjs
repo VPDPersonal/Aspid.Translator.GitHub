@@ -87,6 +87,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
         else window.__engineMode = 'ready';
       } else if (op === 'translator.translate') {
         window.__translationSources.push(args.source);
+        if (window.__engineMode === 'stalled') { window.__hungRequest = id; return; }
         if (args.source === 'be') {
           error = 'Unsupported language pair';
           code = 'NotSupportedError';
@@ -1051,4 +1052,100 @@ test('model preparation shows immediate busy feedback and ignores duplicate page
   } finally {
     await page.close();
   }
+});
+
+
+test('auto settings start and stop translation on the current page', async () => {
+  const { page } = await fixture(comment(), { auto: false });
+  try {
+    await page.evaluate(() => {
+      window.__settings.auto = true;
+      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+    });
+    await page.waitForSelector('[data-ght-clone]');
+    await page.evaluate(() => {
+      window.__settings.auto = false;
+      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+    });
+    await page.waitForFunction(() => !document.querySelector('[data-ght-source], [data-ght-clone]'));
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
+  } finally { await page.close(); }
+});
+
+test('translated links follow attribute edits and same-text markup replacements', async () => {
+  const { page } = await fixture(comment('pullrequest-1', 'Hello <a href="https://example.com/old">documentation</a>'));
+  try {
+    await page.waitForSelector('[data-ght-clone]');
+    await page.evaluate(() => { document.querySelector('[data-ght-source] a').href = 'https://example.com/new'; });
+    await page.waitForFunction(() => document.querySelector('[data-ght-clone] a')?.href === 'https://example.com/new');
+    await page.evaluate(() => {
+      document.querySelector('[data-ght-source] p').innerHTML = 'Hello <strong><a href="https://example.com/latest">documentation</a></strong>';
+    });
+    await page.waitForFunction(() => document.querySelector('[data-ght-clone] strong a')?.href === 'https://example.com/latest');
+  } finally { await page.close(); }
+});
+
+test('Chinese script variants translate while matching scripts are skipped', async () => {
+  for (const [detector, target, translates] of [['zh', 'zh-Hant', true], ['zh-Hant', 'zh', true], ['zh-TW', 'zh-Hant', false]]) {
+    const { page } = await fixture(comment('pullrequest-1', 'Hello 汉语'), { detector, target });
+    try {
+      await page.waitForFunction(() => window.__requests.includes('detector.detect'));
+      if (translates) await page.waitForSelector('[data-ght-clone]');
+      else await page.waitForFunction(() => !document.querySelector('.ght-fab').textContent.includes('Translating'));
+      assert.equal(await page.evaluate(() => window.__requests.includes('translator.translate')), translates);
+    } finally { await page.close(); }
+  }
+});
+
+test('navigation cancels a stalled request and translates the new page before any old response', async () => {
+  const { page } = await fixture(comment(), { mode: 'stalled' });
+  try {
+    await page.waitForFunction(() => Boolean(window.__hungRequest));
+    await page.evaluate(() => {
+      window.__cancelled = [];
+      window.addEventListener('ght:cancel', event => window.__cancelled.push(JSON.parse(event.detail).id));
+      window.__engineMode = 'ready';
+      history.pushState({}, '', '/owner/repo/pull/2');
+      document.body.innerHTML = '<div class="js-comment" id="pullrequest-2"><div class="markdown-body"><p>Hello new page</p></div></div>';
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    await page.waitForSelector('[data-ght-clone]');
+    assert.equal(await page.evaluate(() => window.__cancelled.includes(window.__hungRequest)), true);
+    assert.equal(await page.$eval('[data-ght-clone]', el => el.textContent), 'Привет new page');
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('ght:res', {
+      detail: JSON.stringify({ id: window.__hungRequest, result: ['stale result'] }),
+    })));
+    assert.equal(await page.$eval('[data-ght-clone]', el => el.textContent), 'Привет new page');
+  } finally { await page.close(); }
+});
+
+test('editing a working source cancels its stale translation', async () => {
+  const { page } = await fixture(comment(), { mode: 'stalled' });
+  try {
+    await page.waitForFunction(() => Boolean(window.__hungRequest));
+    await page.evaluate(() => {
+      window.__engineMode = 'ready';
+      document.querySelector('[data-ght-source] p').textContent = 'Hello edited description';
+    });
+    await page.waitForSelector('[data-ght-clone]');
+    assert.match(await page.$eval('[data-ght-clone]', el => el.textContent), /Привет edited description/);
+  } finally { await page.close(); }
+});
+
+
+test('enabling auto preserves a manual translation and its original view', async () => {
+  const { page } = await fixture(comment(), { auto: false });
+  try {
+    await page.click('.ght-fab');
+    await page.waitForSelector('[data-ght-clone]');
+    await page.click('.ght-fab');
+    await page.evaluate(() => {
+      window.__settings.auto = true;
+      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+    });
+    await page.waitForFunction(() => document.querySelector('.ght-fab').textContent.includes('Translate all'));
+    assert.equal(await page.$eval('[data-ght-source]', el => el.hasAttribute('data-ght-hidden')), false);
+    await page.click('.ght-fab');
+    assert.equal(await page.$eval('[data-ght-source]', el => el.hasAttribute('data-ght-hidden')), true);
+  } finally { await page.close(); }
 });

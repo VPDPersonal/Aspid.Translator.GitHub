@@ -207,3 +207,45 @@ test('malformed events are ignored and unsupported APIs report localized errors'
   await assert.rejects(f.callBridge('translator.translate', args), { code: 'Unsupported', message: 'errorUnsupported' });
   assert.equal(f.timers.size, 0);
 });
+
+
+test('caller cancellation aborts the engine, clears timers and ignores late replies', async () => {
+  const waiting = deferred();
+  const f = fixture({ translate: () => waiting.promise });
+  const controller = new AbortController();
+  const call = f.callBridge('translator.translate', args, { signal: controller.signal });
+  const rejected = assert.rejects(call, { name: 'AbortError' });
+  await flush();
+  controller.abort();
+  await rejected;
+  assert.equal(f.instances[0].destroyed, true);
+  assert.equal(f.timers.size, 0);
+  waiting.resolve('late');
+  await flush();
+  assert.equal(f.timers.size, 0);
+  await f.callBridge('translator.prepare', args);
+  assert.equal(f.instances.length, 2);
+});
+
+test('an already cancelled call does not dispatch or create timers', async () => {
+  const f = fixture();
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(f.callBridge('translator.translate', args, { signal: controller.signal }), { name: 'AbortError' });
+  assert.equal(f.requests.length, 0);
+  assert.equal(f.timers.size, 0);
+});
+
+test('cancelled detection does not fall back to another detector', async () => {
+  const f = fixture({ detect: () => new Promise(() => {}) });
+  let fallbackCalls = 0;
+  f.context.chrome.i18n.detectLanguage = async () => { fallbackCalls++; return { languages: [] }; };
+  const controller = new AbortController();
+  const detected = f.detectLanguage('Hello world', { signal: controller.signal });
+  const rejected = assert.rejects(detected, { name: 'AbortError' });
+  await flush();
+  controller.abort();
+  await rejected;
+  assert.equal(fallbackCalls, 0);
+  assert.equal(f.timers.size, 0);
+});

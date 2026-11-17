@@ -33,7 +33,7 @@ function listen() {
     const request = pending.get(message.id);
     if (!request) return;
     pending.delete(message.id);
-    clearTimeout(request.timer);
+    request.cleanup();
     if (message.error) {
       const text = message.code === 'Unsupported' ? t('errorUnsupported') : message.error;
       request.reject(Object.assign(new Error(text), { code: message.code }));
@@ -54,20 +54,32 @@ function listen() {
 }
 
 // Dispatch is synchronous, so a call made inside a click handler keeps the user activation.
-export function callBridge(op, args) {
+export function callBridge(op, args, { signal } = {}) {
   listen();
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(signal.reason); return; }
     const id = ++seq;
-    const request = { resolve, reject, timer: null, arm: () => {
+    const cancel = () => {
+      pending.delete(id);
+      request.cleanup();
+      reject(signal.reason);
+      window.dispatchEvent(new CustomEvent('ght:cancel', { detail: JSON.stringify({ id }) }));
+    };
+    const request = { resolve, reject, timer: null, cleanup: () => {
+      clearTimeout(request.timer);
+      signal?.removeEventListener('abort', cancel);
+    }, arm: () => {
       clearTimeout(request.timer);
       request.timer = setTimeout(() => {
         pending.delete(id);
+        request.cleanup();
         reject(Object.assign(new Error(t('errorTimeout')), { code: 'TimeoutError' }));
         window.dispatchEvent(new CustomEvent('ght:cancel', { detail: JSON.stringify({ id }) }));
         progressListener?.(1); // Clear a stalled download indicator so Retry remains visible.
       }, TIMEOUTS[op] ?? DOWNLOAD_TIMEOUT);
     } };
     pending.set(id, request);
+    signal?.addEventListener('abort', cancel, { once: true });
     request.arm();
     window.dispatchEvent(new CustomEvent('ght:req', { detail: JSON.stringify({ id, op, args }) }));
   });
@@ -84,19 +96,21 @@ export function onDownloadProgress(listener) {
  * Falls back to chrome.i18n when the LanguageDetector model is missing or waits for a download:
  * Chromium-based browsers such as Dia never get that model.
  */
-export async function detectLanguage(text) {
+export async function detectLanguage(text, { signal } = {}) {
   let top = null;
   try {
-    [top] = await callBridge('detector.detect', { text });
+    [top] = await callBridge('detector.detect', { text }, { signal });
   } catch {
     // chrome.i18n can detect languages without a downloaded model.
   }
+  signal?.throwIfAborted();
   if (top?.lang === 'und') return top;
   const plausible = top && matchesScript(top.lang, text);
   if (plausible && top.confidence >= 0.4 && targetFor(top.lang)) return top;
   // A short technical title can be confidently misidentified as an unsupported language.
   // Check an independent detector before asking Translator to use that language pair.
   const fallback = await detectWithCld(text).catch(() => null);
+  signal?.throwIfAborted();
   if (fallback && fallback.lang !== 'und') return fallback;
   return plausible ? top : null;
 }
@@ -138,4 +152,4 @@ async function detectWithCld(text) {
 }
 
 /** Downloads the language detector model. Call it inside a user gesture. */
-export const prepareDetector = () => callBridge('detector.prepare');
+export const prepareDetector = (options) => callBridge('detector.prepare', undefined, options);
