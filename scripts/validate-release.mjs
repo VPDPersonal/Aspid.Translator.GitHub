@@ -7,6 +7,11 @@ import { unzipSync } from 'fflate';
 const text = bytes => new TextDecoder().decode(bytes);
 const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
+export async function sourceLocales() {
+  const entries = await readdir(new URL('../static/_locales/', import.meta.url), { withFileTypes: true });
+  return entries.filter(entry => entry.isDirectory()).map(entry => entry.name);
+}
+
 export function validateRelease(files, { version, locales }) {
   const required = path => {
     assert.ok(files[path]?.length, `Missing or empty packaged file: ${path}`);
@@ -29,7 +34,14 @@ export function validateRelease(files, { version, locales }) {
   required('LICENSE');
   required(manifest.background.service_worker);
   required(manifest.options_ui.page);
-  for (const script of manifest.content_scripts) {
+  const scripts = manifest.content_scripts;
+  assert.equal(scripts.length, 2, 'Expected both translation content scripts');
+  const bridge = scripts.find(script => script.world === 'MAIN');
+  const content = scripts.find(script => (script.world ?? 'ISOLATED') === 'ISOLATED');
+  assert.deepEqual(bridge?.js, ['bridge.js'], 'The translation bridge must run in the MAIN world');
+  assert.deepEqual(content?.js, ['content.js'], 'The content script must run in the ISOLATED world');
+  assert.deepEqual(content.css, ['content.css'], 'The content script requires its stylesheet');
+  for (const script of scripts) {
     assert.deepEqual(script.matches, ['https://github.com/*'], 'Content scripts must only run on github.com');
     for (const path of [...(script.js ?? []), ...(script.css ?? [])]) required(path);
   }
@@ -74,7 +86,7 @@ export function validateRelease(files, { version, locales }) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   const archive = process.argv[2] ?? `release/aspid-github-translator-${version}.zip`;
-  const locales = await readdir(new URL('../static/_locales/', import.meta.url));
+  const locales = await sourceLocales();
   const result = validateRelease(unzipSync(await readFile(archive)), { version, locales });
   console.log(`Validated ${archive}: version ${result.version}, ${result.files} files, ${result.locales} locales`);
 }

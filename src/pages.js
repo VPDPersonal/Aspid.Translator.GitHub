@@ -26,6 +26,8 @@ export function pageOf(pathname) {
   return null;
 }
 
+export const PR_MAIN_TITLE = 'h1 .markdown-title, .gh-header-title .js-issue-title, [data-component="TitleArea"] h1 [class*="markdownTitle"]';
+export const PR_TITLES = `${PR_MAIN_TITLE}, h2[class*="PageHeader-Title"] .markdown-title, [data-component="PH_Title"] [class*="markdownTitle"]`;
 export const ISSUE_TITLE = '[data-testid="issue-title"], [data-testid="issue-title-sticky"], .gh-header-title .js-issue-title';
 export const REFERENCED_COMMIT = '[class*="referencedCommitContainer"]';
 export const DISCUSSION_TITLE = '.gh-header-title .js-issue-title, h1 .markdown-title';

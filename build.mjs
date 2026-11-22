@@ -2,8 +2,9 @@ import * as esbuild from 'esbuild';
 import { Resvg } from '@resvg/resvg-js';
 import { zipSync } from 'fflate';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { join, relative, sep } from 'node:path';
+import { basename, join, relative, sep } from 'node:path';
 import { crc32, deflateSync } from 'node:zlib';
+import { sourceLocales, validateRelease } from './scripts/validate-release.mjs';
 
 const watch = process.argv.includes('--watch');
 const zip = process.argv.includes('--zip');
@@ -140,18 +141,20 @@ async function listFiles(dir) {
 // Packs dist/ for the Web Store: manifest.json at the root of the archive.
 async function writeZip() {
   const files = {};
-  for (const path of await listFiles('dist')) {
+  for (const path of (await listFiles('dist')).sort()) {
     files[relative('dist', path).split(sep).join('/')] = await readFile(path);
   }
+  validateRelease(files, { version: pkg.version, locales: await sourceLocales() });
   const name = `release/aspid-github-translator-${pkg.version}.zip`;
   await mkdir('release', { recursive: true });
-  await writeFile(name, zipSync(files, { level: 9 }));
+  // ZIP stores local calendar fields, so use the same representable date in every time zone.
+  await writeFile(name, zipSync(files, { level: 9, mtime: new Date(1980, 0, 1) }));
   console.log(`Packed ${name}`);
 }
 
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
-await cp('static', 'dist', { recursive: true });
+await cp('static', 'dist', { recursive: true, filter: path => basename(path) !== '.DS_Store' });
 await cp('LICENSE', 'dist/LICENSE');
 await writeManifest();
 await renderIcons();
@@ -175,7 +178,10 @@ const context = await esbuild.context({
 if (watch) {
   await context.watch();
 } else {
-  await context.rebuild();
-  await context.dispose();
+  try {
+    await context.rebuild();
+  } finally {
+    await context.dispose();
+  }
   if (zip) await writeZip();
 }

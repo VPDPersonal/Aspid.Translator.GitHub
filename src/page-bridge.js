@@ -91,28 +91,31 @@ export function onDownloadProgress(listener) {
   progressListener = listener;
 }
 
-/**
- * Returns the most likely language of `text` as `{ lang, confidence }`, or null.
- * Falls back to chrome.i18n when the LanguageDetector model is missing or waits for a download:
- * Chromium-based browsers such as Dia never get that model.
- */
-export async function detectLanguage(text, { signal } = {}) {
-  let top = null;
-  try {
-    [top] = await callBridge('detector.detect', { text }, { signal });
-  } catch {
-    // chrome.i18n can detect languages without a downloaded model.
-  }
-  signal?.throwIfAborted();
-  if (top?.lang === 'und') return top;
-  const plausible = top && matchesScript(top.lang, text);
-  if (plausible && top.confidence >= 0.4 && targetFor(top.lang)) return top;
-  // A short technical title can be confidently misidentified as an unsupported language.
-  // Check an independent detector before asking Translator to use that language pair.
-  const fallback = await detectWithCld(text).catch(() => null);
-  signal?.throwIfAborted();
-  if (fallback && fallback.lang !== 'und') return fallback;
-  return plausible ? top : null;
+/** Detects the segments of one element without retrying a stalled model for every cell. */
+export function createLanguageDetector({ signal } = {}) {
+  let useModel = true;
+  return async text => {
+    signal?.throwIfAborted();
+    let top = null;
+    if (useModel) {
+      try {
+        [top] = await callBridge('detector.detect', { text }, { signal });
+      } catch {
+        signal?.throwIfAborted();
+        useModel = false;
+      }
+    }
+    signal?.throwIfAborted();
+    // Validate the script of the supported language pair: short English labels such as
+    // "Run ID" can be misidentified as romanized Arabic.
+    const target = top && targetFor(top.lang);
+    const plausible = top && top.lang !== 'und' && matchesScript(target ?? top.lang, text);
+    if (plausible && top.confidence >= 0.4 && target) return top;
+    const fallback = await detectWithCld(text).catch(() => null);
+    signal?.throwIfAborted();
+    if (fallback && fallback.lang !== 'und') return fallback;
+    return plausible || top?.lang === 'und' ? top : null;
+  };
 }
 
 function matchesScript(language, text) {
@@ -139,7 +142,7 @@ async function detectWithCld(text) {
   const { languages: [top] } = await chrome.i18n.detectLanguage(text);
   if (!top) return null;
   const guess = { lang: top.language, confidence: top.percentage / 100 };
-  if (!matchesScript(guess.lang, text)) return null;
+  if (guess.lang !== 'und' && !matchesScript(targetFor(guess.lang) ?? guess.lang, text)) return null;
   // `und` would maximize to English, so it is checked by name.
   if (['en', 'und'].includes(guess.lang) || new Intl.Locale(guess.lang).maximize().script !== 'Latn') return guess;
   // CLD3 tells scripts apart well, but often takes English technical text for another Latin-script

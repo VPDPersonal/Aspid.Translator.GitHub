@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Aspid Translator for GitHub**, a Chrome extension. Last updated: October 15, 2026.
+**Aspid Translator for GitHub**, a Chrome extension. Last updated: November 23, 2026.
 
 ## Summary
 
@@ -9,8 +9,9 @@ and no accounts. Text is translated on your device by Chrome.
 
 ## What the extension reads
 
-On `github.com` pages, the extension reads the text of pull requests, comments, commits and
-README files to translate it. That text is handed to Chrome's built-in Translator and
+On `github.com`, the extension reads the page sections you enable for translation. These
+include pull requests, issues, discussions and their comments, list titles, commit messages,
+repository descriptions, rendered Markdown, release notes, wikis and activity feed cards. That text is handed to Chrome's built-in Translator and
 LanguageDetector APIs and to its extension language detector (`chrome.i18n`), which run on your
 device. The translated text is shown on the page and is never saved or sent anywhere. Nothing is
 posted to GitHub: other people still see the original.

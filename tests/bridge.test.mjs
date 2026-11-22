@@ -139,10 +139,13 @@ test('a stalled create is aborted; its late rejection cannot evict a replacement
 
 test('a stalled detector falls back to chrome.i18n and can be recreated', async () => {
   const f = fixture({ detect: () => new Promise(() => {}) });
-  const detection = f.detectLanguage('This is an English sentence');
+  const detect = f.createLanguageDetector();
+  const detection = detect('This is an English sentence');
   await flush();
   f.tick(15000);
   assert.equal((await detection).lang, 'en');
+  assert.equal((await detect('Another cell')).lang, 'en');
+  assert.equal(f.requests.filter(req => req.op === 'detector.detect').length, 1);
   assert.equal(f.instances[0].destroyed, true);
   await f.callBridge('detector.prepare');
   assert.equal(f.instances.length, 2);
@@ -241,11 +244,27 @@ test('cancelled detection does not fall back to another detector', async () => {
   let fallbackCalls = 0;
   f.context.chrome.i18n.detectLanguage = async () => { fallbackCalls++; return { languages: [] }; };
   const controller = new AbortController();
-  const detected = f.detectLanguage('Hello world', { signal: controller.signal });
+  const detected = f.createLanguageDetector({ signal: controller.signal })('Hello world');
   const rejected = assert.rejects(detected, { name: 'AbortError' });
   await flush();
   controller.abort();
   await rejected;
   assert.equal(fallbackCalls, 0);
   assert.equal(f.timers.size, 0);
+});
+
+test('cancelling detection preserves a model download shared with a preparation request', async () => {
+  const download = deferred();
+  const f = fixture({ create: () => download.promise });
+  const prepare = f.callBridge('detector.prepare');
+  const controller = new AbortController();
+  const detecting = f.callBridge('detector.detect', { text: 'Hello' }, { signal: controller.signal });
+  const rejected = assert.rejects(detecting, { name: 'AbortError' });
+  controller.abort();
+  await rejected;
+  assert.equal(f.instances[0].destroyed, false);
+  download.resolve(f.instances[0]);
+  await prepare;
+  await f.callBridge('detector.detect', { text: 'Hello again' });
+  assert.equal(f.instances.length, 1);
 });
