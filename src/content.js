@@ -1,17 +1,17 @@
 import { t } from './i18n.js';
-import { loadSettings, languageName, targetFor } from './settings.js';
+import { loadSettings, normalizeSettings, languageName, targetFor } from './settings.js';
 import {
   applyTranslation, cloneForTranslation, collectPlainSegments, collectSegments, hasLetters, linkEmbeds, placeEmbeds,
   protectNames, protectPrefix, stripTags, textOf,
 } from './dom.js';
-import { detectLanguage, onDownloadProgress, prepareDetector } from './page-bridge.js';
+import { createLanguageDetector, onDownloadProgress, prepareDetector } from './page-bridge.js';
 import { getProvider } from './providers/index.js';
 import { ABOUT_SELECTOR, controlScope, createControl, directoryMessages, placeControl, removeControl } from './controls.js';
-import { FEED_CARD, REFERENCED_COMMIT, extraTargets, feedContent, pageOf } from './pages.js';
+import { FEED_CARD, PR_TITLES, REFERENCED_COMMIT, extraTargets, feedContent, pageOf } from './pages.js';
 
 const README_SELECTOR = 'article.markdown-body[itemprop="text"], #readme .markdown-body';
 const EXCLUDE_SELECTOR = [
-  '[contenteditable="true"]', '.js-preview-body', '[data-ght-clone]', '.prose-diff',
+  '.js-preview-body', '[data-ght-clone]', '.prose-diff',
   '.rich-diff', '.js-file-content', '[data-ght-ui]', '[class*="MarkdownEditor"]', '[class*="markdown-editor"]',
   '[role="dialog"]', 'dialog', '.Overlay',
 ].join(',');
@@ -32,7 +32,7 @@ const TARGETS = [
     mode: 'inline',
     kind: 'prTitle',
     pages: ['pull'],
-    selector: 'h1 .markdown-title, h2[class*="PageHeader-Title"] .markdown-title, .gh-header-title .js-issue-title',
+    selector: PR_TITLES,
   },
   {
     mode: 'inline',
@@ -91,7 +91,6 @@ const state = {
   pageAlways: false,
   active: false,
   showOriginal: false,
-  needsActivation: false,
   downloadProgress: null,
   preparingModels: null,
   preparationController: null,
@@ -113,59 +112,58 @@ const sameLanguage = (a, b) => (targetFor(a) ?? a.toLowerCase()) === (targetFor(
 // ---------------------------------------------------------------------------------------------
 // Translation of one element.
 
-/**
- * Returns a translated copy of the job's element, or null when there is nothing to translate.
- * Sets `job.source` to the source language as soon as it is known.
- */
+async function groupBySource(segments, provider, target, signal) {
+  const detectLanguage = createLanguageDetector({ signal });
+  const batches = new Map();
+  const guesses = new Map();
+  for (const segment of segments) {
+    signal.throwIfAborted();
+    const sample = stripTags(segment.text).slice(0, 2000);
+    if (!hasLetters(sample)) continue;
+    if (!guesses.has(sample)) {
+      guesses.set(sample, await detectLanguage(sample));
+    }
+    const detected = guesses.get(sample);
+    if (detected?.lang === 'und') continue;
+    let source = detected?.lang;
+    if (provider.needsSource && (!source || detected.confidence < 0.4)) source = 'en';
+    if (source && sameLanguage(source, target) && (provider.needsSource || detected.confidence >= 0.5)) continue;
+    if (provider.plainText) protectNames(segment, { capitalized: Boolean(source) && sameLanguage(source, 'en') });
+    if (!hasLetters(stripTags(segment.text))) continue;
+    if (!batches.has(source)) batches.set(source, []);
+    batches.get(source).push(segment);
+  }
+  return batches;
+}
+
+/** Translates a detached copy, keeping each paragraph or table cell in its original position. */
 async function translateElement(job) {
   const { provider, settings: { target } } = state;
   const { signal } = job.controller;
   signal.throwIfAborted();
   const clone = cloneForTranslation(job.el);
   const segments = job.mode === 'plain' ? collectPlainSegments(clone) : collectSegments(clone);
-  if (!segments.length) return null;
   if (job.mode === 'inline') segments.forEach(protectPrefix);
 
-  const sample = segments.map((s) => stripTags(s.text)).join('\n').slice(0, 2000);
-  if (!hasLetters(sample)) return null;
-  let detected = null;
-  try {
-    detected = await detectLanguage(sample, { signal });
-  } catch (error) {
-    if (provider.needsSource) throw error; // other engines detect the language themselves
-  }
-  signal.throwIfAborted();
-  if (detected && (detected.lang === 'und' || (sameLanguage(detected.lang, target) && detected.confidence >= 0.5))) {
-    return null;
-  }
-
-  let source = detected?.lang;
-  if (provider.needsSource) {
-    // Short titles often get a low-confidence guess; GitHub text is English far more often.
-    if (!source || detected.confidence < 0.4) source = 'en';
-    if (sameLanguage(source, target)) return null;
-  }
-  job.source = source;
-
-  if (provider.plainText) {
-    const capitalized = Boolean(source) && sameLanguage(source, 'en');
-    for (const segment of segments) protectNames(segment, { capitalized });
-  }
-  const pending = segments.filter((segment) => hasLetters(stripTags(segment.text)));
-  if (!pending.length) return null;
-
-  const result = await provider.translate({ texts: pending.map((segment) => segment.text), source, target, signal });
-  signal.throwIfAborted();
-  job.source ??= result.sourceLanguage;
-
+  const batches = await groupBySource(segments, provider, target, signal);
+  job.sources.clear();
   let changed = false;
-  pending.forEach((segment, i) => {
-    const translated = result.translations[i]?.trim();
-    if (translated && translated !== segment.text) {
-      applyTranslation(segment, translated);
-      changed = true;
-    }
-  });
+  for (const [source, batch] of batches) {
+    signal.throwIfAborted();
+    // A model download must prepare the specific pair that requested activation.
+    job.modelSource = source;
+    const result = await provider.translate({ texts: batch.map(segment => segment.text), source, target, signal });
+    signal.throwIfAborted();
+    const language = source ?? result.sourceLanguage;
+    batch.forEach((segment, index) => {
+      const translated = result.translations[index]?.trim();
+      if (translated && translated !== segment.text) {
+        applyTranslation(segment, translated);
+        changed = true;
+        if (language) job.sources.add(language);
+      }
+    });
+  }
   return changed ? clone : null;
 }
 
@@ -183,6 +181,11 @@ const io = new IntersectionObserver((entries) => {
 
 const isCurrent = (job) => state.jobs.get(job.el) === job;
 
+const EDITABLE = '[contenteditable=""], [contenteditable="true" i], [contenteditable="plaintext-only" i]';
+function overlapsEditor(el) {
+  return el.closest(EDITABLE) || el.querySelector(EDITABLE);
+}
+
 function scan() {
   if (!state.active) return;
   const { parts } = state.settings;
@@ -191,7 +194,7 @@ function scan() {
     if (target.kind && !parts[target.kind]) continue;
     for (const el of target.find ? target.find() : document.querySelectorAll(target.selector)) {
       const excluded = el.closest(EXCLUDE_SELECTOR);
-      if (state.jobs.has(el) || excluded || (!target.allowInForm && el.closest('form')) || !hasLetters(el.textContent)) continue;
+      if (state.jobs.has(el) || excluded || overlapsEditor(el) || (!target.allowInForm && el.closest('form')) || !hasLetters(el.textContent)) continue;
       if (el.closest('[data-ght-source]') || el.querySelector('[data-ght-source]')) continue;
       let kind = target.kind;
       if (target.mode === 'block') {
@@ -201,7 +204,7 @@ function scan() {
       }
       const job = {
         el, kind, mode: target.mode, status: 'pending', showOriginal: state.showOriginal,
-        clone: null, embeds: [], source: null, text: '', errorText: null, group: null,
+        clone: null, embeds: [], sources: new Set(), modelSource: null, text: '', errorText: null, group: null,
         controller: new AbortController(), dirty: false,
       };
       state.jobs.set(el, job);
@@ -244,6 +247,7 @@ async function processJob(job) {
       updateControl(job.group);
       return;
     }
+    clone.lang = state.settings.target;
     job.clone = clone;
     job.embeds = linkEmbeds(job.el, clone);
     job.el.after(clone);
@@ -254,7 +258,6 @@ async function processJob(job) {
     if (!isCurrent(job)) return;
     if (error.code === 'activation') {
       job.status = 'activation';
-      state.needsActivation = true;
       job.errorText = t('labelNeedsModel');
     } else {
       job.status = 'error';
@@ -274,7 +277,7 @@ function retry(job) {
 function prepareModels(source = 'en') {
   if (state.preparingModels) return;
   const { provider, settings: { target } } = state;
-  // The detector is optional: without it detectLanguage() falls back to chrome.i18n.
+  // The detector is optional because chrome.i18n can also identify the source language.
   const controller = new AbortController();
   state.preparationController = controller;
   const { signal } = controller;
@@ -289,7 +292,6 @@ function prepareModels(source = 'en') {
       if (state.preparingModels !== preparation) return;
       state.preparingModels = null;
       state.downloadProgress = null;
-      state.needsActivation = false;
       for (const job of state.jobs.values()) if (job.status === 'activation') retry(job);
       updateFab();
     },
@@ -312,13 +314,19 @@ function prepareModels(source = 'en') {
 // Rendering.
 
 // Inline !important beats GitHub utilities such as `.d-block { display: block !important }`.
+const originalDisplay = new WeakMap();
 function setHidden(node, hidden) {
   if (hidden) {
+    if (originalDisplay.has(node)) return;
+    originalDisplay.set(node, [node.style.display, node.style.getPropertyPriority('display')]);
     node.setAttribute('data-ght-hidden', '');
     node.style.setProperty('display', 'none', 'important');
-  } else if (node.hasAttribute('data-ght-hidden')) {
+  } else if (originalDisplay.has(node)) {
     node.removeAttribute('data-ght-hidden');
-    node.style.removeProperty('display');
+    if (node.style.display === 'none' && node.style.getPropertyPriority('display') === 'important') {
+      node.style.setProperty('display', ...originalDisplay.get(node));
+    }
+    originalDisplay.delete(node);
   }
 }
 
@@ -349,7 +357,7 @@ function detachGroup(job) {
 function onControlClick(group) {
   const activation = [...group.jobs].find(job => job.status === 'activation');
   if (activation) {
-    prepareModels(activation.source);
+    prepareModels(activation.modelSource);
     return;
   }
   const errors = [...group.jobs].filter(job => job.status === 'error');
@@ -395,7 +403,7 @@ function updateControl(group) {
     text = t(group.kind === 'directory'
       ? group.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals'
       : group.showOriginal ? 'actionShowTranslation' : 'actionShowOriginal');
-    const from = [...new Set(jobs.map(job => job.source).filter(Boolean))].map(code => languageName(code)).join(', ') || t('sourceUnknown');
+    const from = [...new Set(jobs.flatMap(job => [...job.sources]))].map(code => languageName(code)).join(', ') || t('sourceUnknown');
     hint = group.showOriginal ? t('labelOriginal', from) : t('labelTranslated', from, languageName(state.settings.target));
   }
   const downloading = activation && (state.preparingModels || state.downloadProgress !== null);
@@ -443,8 +451,10 @@ function render(job) {
   setHidden(job.clone, job.showOriginal);
   moveIds(job, !job.showOriginal);
   placeEmbeds(job.embeds, !job.showOriginal);
-  const from = job.source ? languageName(job.source) : t('sourceUnknown');
-  if (job.mode !== 'block') job.clone.title = t('tooltipOriginal', from, job.el.textContent.trim());
+  if (job.mode !== 'block') {
+    const from = [...job.sources].map(code => languageName(code)).join(', ') || t('sourceUnknown');
+    job.clone.title = t('tooltipOriginal', from, job.el.textContent.trim());
+  }
 }
 
 function removeTranslation(job) {
@@ -488,7 +498,7 @@ function updateFab() {
   let text;
   if (state.preparingModels || state.downloadProgress !== null) text = t('fabDownloading', Math.round((state.downloadProgress ?? 0) * 100));
   else if (!state.active) text = t('fabTranslate');
-  else if (state.needsActivation) text = t('fabDownloadModel');
+  else if (activationJob()) text = t('fabDownloadModel');
   else if (busy) text = t('fabTranslating', busy);
   else if (error) text = t('actionRetry');
   else text = t(state.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals');
@@ -498,14 +508,18 @@ function updateFab() {
   fab.setAttribute('aria-label', text);
 }
 
+function activationJob() {
+  return [...state.jobs.values()].find(job => job.status === 'activation');
+}
+
 function onFabClick() {
-  const activation = [...state.jobs.values()].find(job => job.status === 'activation');
-  if (!state.active || state.needsActivation) prepareModels(activation?.source);
+  const activation = activationJob();
+  if (!state.active || activation) prepareModels(activation?.modelSource);
   if (!state.active) {
     start();
     return;
   }
-  if (state.needsActivation) return;
+  if (activation) return;
   const errors = pageErrors();
   if (errors.length) {
     errors.forEach(retry);
@@ -533,7 +547,6 @@ function start() {
 
 function stop() {
   state.active = false;
-  state.needsActivation = false;
   state.preparingModels = null;
   state.preparationController?.abort();
   state.preparationController = null;
@@ -584,10 +597,13 @@ function maintain() {
   if (!state.active) return;
   for (const job of [...state.jobs.values()]) {
     const settled = job.status === 'done' || job.status === 'skipped' || job.status === 'error';
-    if (!job.el.isConnected || job.dirty || (settled && textOf(job.el) !== job.text)) {
+    if (!job.el.isConnected || job.dirty || overlapsEditor(job.el) || (settled && textOf(job.el) !== job.text)) {
       removeTranslation(job);
       state.jobs.delete(job.el);
-    } else if (controlScope(job.el, job.kind).root !== job.group.root) {
+      continue;
+    }
+    if (job.clone && job.clone.parentNode !== job.el.parentNode) job.el.after(job.clone);
+    if (controlScope(job.el, job.kind).root !== job.group.root) {
       detachGroup(job);
       attachGroup(job);
       if (job.status === 'done') render(job);
@@ -600,28 +616,31 @@ function maintain() {
 
 let maintainTimer = 0;
 function scheduleMaintain() {
-  clearTimeout(maintainTimer);
-  maintainTimer = setTimeout(maintain, 250);
+  if (maintainTimer) return;
+  maintainTimer = setTimeout(() => {
+    maintainTimer = 0;
+    maintain();
+  }, 250);
 }
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes.settings) return;
   const previous = state.settings;
-  loadSettings().then((settings) => {
-    applySettings(settings);
-    const changed = ['provider', 'target'].some((key) => previous[key] !== settings[key])
-      || JSON.stringify(previous.parts) !== JSON.stringify(settings.parts);
-    if (changed && state.pageKey) {
-      const wasActive = state.active;
-      stop();
-      if (previous.auto !== settings.auto ? settings.auto : wasActive || settings.auto) start();
-    } else if (state.pageKey && previous.auto !== settings.auto) {
-      if (!settings.auto) stop();
-      else if (!state.active) start();
-    }
-    syncFab();
-    updateFab();
-  });
+  const settings = normalizeSettings(changes.settings.newValue);
+  applySettings(settings);
+  if (!previous || !state.pageKey) return;
+  const changed = previous.provider !== settings.provider || previous.target !== settings.target
+    || Object.keys(settings.parts).some(key => previous.parts[key] !== settings.parts[key]);
+  if (changed) {
+    const wasActive = state.active;
+    stop();
+    if (settings.auto || (wasActive && previous.auto === settings.auto)) start();
+  } else if (previous.auto !== settings.auto) {
+    if (!settings.auto) stop();
+    else if (!state.active) start();
+  }
+  syncFab();
+  updateFab();
 });
 
 function applySettings(settings) {
@@ -630,7 +649,8 @@ function applySettings(settings) {
 }
 
 (async () => {
-  applySettings(await loadSettings());
+  const initialSettings = await loadSettings();
+  if (!state.settings) applySettings(initialSettings);
   onLocationChange();
   const ownUI = node => (node.nodeType === 1 ? node : node.parentElement)?.closest('[data-ght-ui], [data-ght-clone], .ght-fab');
   const movedEmbed = node => node.nodeType === 8 && node.nodeValue === 'ght-embed'
@@ -641,6 +661,8 @@ function applySettings(settings) {
       if (ownUI(record.target)) continue;
       const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
       if (target?.closest('.render-needs-enrichment')) continue;
+      if (record.type === 'childList' && [...record.removedNodes].some(node =>
+        node.nodeType === 1 && !node.isConnected && node.matches('[data-ght-clone], [data-ght-ui], .ght-fab'))) changed = true;
       if (record.type === 'childList'
         && [...record.addedNodes, ...record.removedNodes].every(node => ownUI(node) || movedEmbed(node))) continue;
       const source = target?.closest('[data-ght-source]');
@@ -649,9 +671,9 @@ function applySettings(settings) {
       changed = true;
     }
     if (changed) scheduleMaintain();
-  }).observe(document.body, {
+  }).observe(document.documentElement, {
     childList: true, subtree: true, characterData: true,
-    attributes: true, attributeFilter: ['hidden', 'aria-hidden', 'aria-pressed', 'class', 'href', 'src', 'srcset', 'alt', 'title', 'checked', 'value', 'colspan', 'rowspan'],
+    attributes: true, attributeFilter: ['contenteditable', 'hidden', 'aria-hidden', 'aria-pressed', 'class', 'href', 'src', 'srcset', 'alt', 'title', 'checked', 'value', 'colspan', 'rowspan'],
   });
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);

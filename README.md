@@ -95,7 +95,7 @@ Only what you see changes. Nothing is posted to GitHub, and other people still s
 **From source:**
 
 ```bash
-npm install
+npm ci
 npm run build
 ```
 
@@ -146,11 +146,13 @@ Switch to the original for that comment with one click, and
 
 Use Node.js 22.17 or newer and an installed desktop Chrome.
 
-Run `npm run watch` while developing, then press the reload button on the extension card
-in `chrome://extensions`.
+Run `npm run watch` for JavaScript changes. Restart it after editing static HTML, CSS,
+locale files or icons to refresh the copied assets. Reload the extension in `chrome://extensions`
+and refresh any open GitHub tab to load the new content scripts.
 
-Run `npm test` for the DOM integration suite. It uses a translation stand-in and an
-installed Chrome executable; set `CHROME_PATH` to override the default macOS path.
+Run `npm test` for the translation, DOM and packaging tests. The end-to-end test installs the
+contents of the release ZIP in a temporary Chrome profile and changes settings in an open tab.
+These tests use a translation stand-in. Set `CHROME_PATH` to override the system Chrome executable.
 Check Chrome's real translation models and personalized Home/Feed layouts manually.
 
 Run `npm run check` to run the tests, build the Web Store archive and validate
@@ -182,7 +184,7 @@ dependency advisories with `npm audit`.
 
 To release a new version, bump `version` in `package.json` and run `npm run zip`.
 When the UI changes, re-render the store images with `npm run store:shots` and `npm run store:promo`:
-they need Chrome in `/Applications` (or `CHROME_PATH`) and run it headless.
+they run system Chrome headless (or the executable in `CHROME_PATH`).
 The Dashboard fields are in [`store/README.md`](store/README.md).
 
 To add a UI language, copy `static/_locales/en/messages.json` to a folder named after the

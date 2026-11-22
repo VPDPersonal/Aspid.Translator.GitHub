@@ -70,7 +70,9 @@ function collectRuns(root) {
       run = [];
     };
     for (const child of [...el.childNodes]) {
-      if (child.nodeType === Node.ELEMENT_NODE && isBlock(child)) {
+      if (child.nodeName === 'BR') {
+        flush();
+      } else if (child.nodeType === Node.ELEMENT_NODE && isBlock(child)) {
         flush();
         visit(child);
       } else if (child.nodeType === Node.TEXT_NODE || child.nodeType === Node.ELEMENT_NODE) {
@@ -110,7 +112,8 @@ export function collectSegments(root) {
 
 // A tag, or a word together with the `.`, `/` and `-` joints of file and package names.
 const WORD_OR_TAG = /(<\/?[xg]\d+\/?>)|(@?[\p{L}\p{N}_]+(?:[-./][\p{L}\p{N}_]+)*)/gu;
-const SENTENCE_END = /(?:^|[.!?:(«"'])$/;
+// A spaced slash also starts a new label, as in "Layer / File(s)".
+const SENTENCE_END = /(?:^|[.!?:(«"']|\s\/)$/;
 
 function isIdentifier(word) {
   return /\p{Ll}\p{Lu}/u.test(word) // CamelCase: SerializeReference, OnGUI

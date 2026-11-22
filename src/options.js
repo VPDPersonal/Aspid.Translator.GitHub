@@ -85,6 +85,7 @@ async function init() {
   for (const key of PARTS) partSwitch(key).checked = settings.parts[key];
   renderProviders(getProvider(settings.provider).id);
   await showLanguage(settings.target);
+  form.inert = false;
 }
 
 // Every change is saved at once: open GitHub tabs listen to chrome.storage and apply it.

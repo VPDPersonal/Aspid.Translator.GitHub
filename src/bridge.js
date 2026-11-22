@@ -23,7 +23,7 @@
   // and destroy a ready instance without affecting a newer replacement in the cache.
   function entry(create, forget) {
     const controller = new AbortController();
-    const value = { controller, promise: null };
+    const value = { controller, promise: null, users: new Set() };
     value.promise = create(controller.signal).catch((error) => {
       forget(value);
       throw error;
@@ -66,17 +66,23 @@
     const discard = () => {
       if (forget()) value.controller.abort();
     };
-    signal.addEventListener('abort', discard, { once: true });
+    value.users.add(signal);
+    const cancel = () => {
+      value.users.delete(signal);
+      if (!value.users.size) discard();
+    };
+    signal.addEventListener('abort', cancel, { once: true });
     try {
       signal.throwIfAborted();
       const instance = await value.promise;
       signal.throwIfAborted();
       return await use(instance);
     } catch (error) {
-      if (!KEEP_INSTANCE.has(error?.name)) discard();
+      if (!signal.aborted && !KEEP_INSTANCE.has(error?.name)) discard();
       throw error;
     } finally {
-      signal.removeEventListener('abort', discard);
+      signal.removeEventListener('abort', cancel);
+      value.users.delete(signal);
     }
   }
 

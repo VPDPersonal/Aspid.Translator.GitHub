@@ -1,4 +1,4 @@
-import { DISCUSSION_TITLE, FEED_CARD, ISSUE_TITLE, REFERENCED_COMMIT, listScope, pageOf, releaseScope, releaseTitles, wikiScope } from './pages.js';
+import { DISCUSSION_TITLE, FEED_CARD, ISSUE_TITLE, PR_MAIN_TITLE, REFERENCED_COMMIT, listScope, pageOf, releaseScope, releaseTitles, wikiScope } from './pages.js';
 
 const COMMENT = '.js-comment, .timeline-comment, .review-comment, .discussion-comment, .react-issue-body, [id^="discussion_r"], [data-testid="issue-body"], [data-testid="issue-comment"], [data-testid="comment-viewer-outer-box"], [data-testid="comment-viewer-container"], [class*="ReviewComment"]';
 const REACTIONS = '.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]';
@@ -77,7 +77,7 @@ export function controlScope(el, kind) {
   }
   if (kind === 'prTitle') {
     // The normal and sticky headings represent the same title and share one switch.
-    const title = document.querySelector('h1 .markdown-title, .gh-header-title .js-issue-title') ?? el;
+    const title = document.querySelector(PR_MAIN_TITLE) ?? el;
     const heading = title.closest('h1, h2, .gh-header-title') ?? title.parentElement;
     return { root: heading.closest('[class*="titleWithAction"]') ?? heading, kind: 'title' };
   }

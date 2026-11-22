@@ -2,7 +2,7 @@
 //   node store/render.mjs promo   promo tiles from store/promo/*.html
 //   node store/render.mjs shots   screenshots of the extension on live GitHub pages
 // Run `npm run build` first: the screenshots load the extension from dist/.
-// Set CHROME_PATH when Chrome is not in /Applications.
+// Set CHROME_PATH to override the system Chrome executable.
 
 import puppeteer from 'puppeteer-core';
 import { mkdir, readFile } from 'node:fs/promises';
@@ -11,7 +11,6 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const CHROME = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 // Kept between runs, so Chrome downloads the translation models once.
 const PROFILE = join(tmpdir(), 'aspid-store-chrome');
 
@@ -125,27 +124,36 @@ const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 function launch(lang, extensions = false) {
   return puppeteer.launch({
-    executablePath: CHROME,
+    channel: 'chrome',
+    executablePath: process.env.CHROME_PATH,
     headless: true,
     enableExtensions: extensions,
+    pipe: true,
     userDataDir: `${PROFILE}-${lang}`,
     // Puppeteer turns off the components that download translation models.
-    ignoreDefaultArgs: ['--disable-features=Translate,AcceptCHFrame,MediaRouter,OptimizationHints,WebUIReloadButton,ProcessPerSiteUpToMainFrameThreshold,IsolateSandboxedIframes', '--disable-background-networking', '--disable-component-extensions-with-background-pages'],
+    ignoreDefaultArgs: ['--disable-background-networking', '--disable-component-extensions-with-background-pages'],
     // On macOS Chrome takes its UI language from AppleLanguages and ignores --lang.
-    args: [`--lang=${lang}`, '-AppleLanguages', `(${lang})`, '--hide-scrollbars'],
+    args: [
+      `--lang=${lang}`, '--enable-features=Translate,OptimizationHints', '--hide-scrollbars',
+      ...(process.platform === 'darwin' ? ['-AppleLanguages', `(${lang})`] : []),
+      ...(extensions ? ['--enable-unsafe-extension-debugging'] : []),
+    ],
   });
 }
 
 async function renderPromo() {
   const browser = await launch('en-US');
-  for (const { name, width, height } of PROMO) {
-    const page = await browser.newPage();
-    await page.setViewport({ width, height, deviceScaleFactor: 1 });
-    await page.goto(pathToFileURL(join(ROOT, 'store/promo', `${name}.html`)).href, { waitUntil: 'networkidle0' });
-    await page.screenshot({ path: join(ROOT, 'store/promo', `${name}.png`) });
-    console.log(`store/promo/${name}.png`);
+  try {
+    for (const { name, width, height } of PROMO) {
+      const page = await browser.newPage();
+      await page.setViewport({ width, height, deviceScaleFactor: 1 });
+      await page.goto(pathToFileURL(join(ROOT, 'store/promo', `${name}.html`)).href, { waitUntil: 'networkidle0' });
+      await page.screenshot({ path: join(ROOT, 'store/promo', `${name}.png`) });
+      console.log(`store/promo/${name}.png`);
+    }
+  } finally {
+    await browser.close();
   }
-  await browser.close();
 }
 
 // Headless Chrome ships no language detection model, so pages get a stand-in that tells
@@ -298,7 +306,7 @@ async function shoot(browser, extensionId, shot) {
     const page = await browser.newPage();
     try {
       await capturePage(page, extensionId, shot);
-      return await page.screenshot();
+      return await page.screenshot({ encoding: 'base64' });
     } catch (error) {
       if (attempt === 2) throw error;
       console.warn(`${error.message}; retrying`);
@@ -324,8 +332,8 @@ async function frame(browser, image, shot, lang) {
     document.querySelector('h1').textContent = caption;
     document.querySelector('p').textContent = sub;
     document.querySelector('img').src = src;
-  }, { caption: shot.caption, sub: shot.sub, src: `data:image/png;base64,${image.toString('base64')}` });
-  await page.waitForFunction(() => document.querySelector('img').complete);
+  }, { caption: shot.caption, sub: shot.sub, src: `data:image/png;base64,${image}` });
+  await page.evaluate(() => document.querySelector('img').decode());
   const path = join(ROOT, 'store/screenshots', lang, `${shot.name}.png`);
   await page.screenshot({ path });
   await page.close();
@@ -337,18 +345,21 @@ async function renderShots(only) {
     if (only && only !== lang) continue;
     await mkdir(join(ROOT, 'store/screenshots', lang), { recursive: true });
     const browser = await launch(set.lang, true);
-    const extensionId = await browser.installExtension(join(ROOT, 'dist'));
-    const setup = await browser.newPage();
-    await setup.goto(`chrome-extension://${extensionId}/options.html`);
-    await setup.evaluate((settings) => chrome.storage.local.set({ settings }), {
-      provider: 'builtin', target: set.target, auto: true, parts: ALL_PARTS,
-    });
-    await setup.close();
-    for (const shot of set.list) {
-      const image = await shoot(browser, extensionId, shot);
-      console.log(await frame(browser, image, shot, lang));
+    try {
+      const extensionId = await browser.installExtension(join(ROOT, 'dist'));
+      const setup = await browser.newPage();
+      await setup.goto(`chrome-extension://${extensionId}/options.html`);
+      await setup.evaluate((settings) => chrome.storage.local.set({ settings }), {
+        provider: 'builtin', target: set.target, auto: true, parts: ALL_PARTS,
+      });
+      await setup.close();
+      for (const shot of set.list) {
+        const image = await shoot(browser, extensionId, shot);
+        console.log(await frame(browser, image, shot, lang));
+      }
+    } finally {
+      await browser.close();
     }
-    await browser.close();
   }
 }
 

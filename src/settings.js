@@ -47,13 +47,20 @@ export const DEFAULT_SETTINGS = {
   parts: Object.fromEntries(PARTS.map((key) => [key, true])),
 };
 
+export function normalizeSettings(settings) {
+  return {
+    provider: typeof settings?.provider === 'string' ? settings.provider : DEFAULT_SETTINGS.provider,
+    target: targetFor(settings?.target) ?? DEFAULT_SETTINGS.target,
+    auto: typeof settings?.auto === 'boolean' ? settings.auto : DEFAULT_SETTINGS.auto,
+    parts: Object.fromEntries(PARTS.map(key => [
+      key, typeof settings?.parts?.[key] === 'boolean' ? settings.parts[key] : DEFAULT_SETTINGS.parts[key],
+    ])),
+  };
+}
+
 export async function loadSettings() {
   const { settings } = await chrome.storage.local.get('settings');
-  return {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-    parts: { ...DEFAULT_SETTINGS.parts, ...settings?.parts },
-  };
+  return normalizeSettings(settings);
 }
 
 export function saveSettings(settings) {

@@ -30,15 +30,16 @@ so the Dashboard shows them read-only.
 
 **Single purpose**
 
-> Translates pull requests, code review comments, commits and README files on github.com into
-> the user's language in place, on the user's device with Chrome's built-in Translator API.
+> Translates selected GitHub content into the user's language in place. This includes pull
+> requests, issues, discussions, comments, commits, repository documentation, releases,
+> wikis and feed cards. Chrome's built-in Translator API runs on the user's device.
 
 **Permission justification**
 
 | Permission | Justification |
 |---|---|
 | `storage` | Keeps the user's settings (target language, automatic translation, which parts of a page to translate) on the device. |
-| Host permission `https://github.com/*` (content scripts) | The extension finds pull request, commit and README text on github.com pages and shows its translation in place. It runs on no other site. |
+| Host permission `https://github.com/*` (content scripts) | The extension reads the enabled sections of GitHub pages and shows its translation in place. It runs on no other site. |
 
 **Remote code:** No, I am not using remote code. All scripts are in the package.
 

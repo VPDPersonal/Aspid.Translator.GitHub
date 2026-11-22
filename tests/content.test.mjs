@@ -11,7 +11,8 @@ const css = await readFile(new URL('static/content.css', root), 'utf8');
 
 before(async () => {
   browser = await puppeteer.launch({
-    executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    channel: 'chrome',
+    executablePath: process.env.CHROME_PATH,
     headless: true,
     args: process.env.CI ? ['--no-sandbox', '--disable-gpu'] : [],
     protocolTimeout: 30000,
@@ -72,7 +73,10 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
       let result, error, code;
       if (op === 'detector.detect') {
         if (detector === 'unavailable') error = 'Detector model unavailable';
-        else result = [{ lang: args.text.includes('Already Russian') ? 'ru' : detector, confidence: 1 }];
+        else if (detector === 'mixed') {
+          const lang = /\p{Script=Han}/u.test(args.text) ? 'zh' : /\p{Script=Cyrillic}/u.test(args.text) ? 'ru' : 'en';
+          result = [{ lang, confidence: 1 }];
+        } else result = [{ lang: args.text.includes('Already Russian') ? 'ru' : detector, confidence: 1 }];
       }
       else if (op === 'translator.prepare') {
         window.__preparedSources.push(args.source);
@@ -91,11 +95,16 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
         if (args.source === 'be') {
           error = 'Unsupported language pair';
           code = 'NotSupportedError';
-        } else if (['activation', 'download-error', 'waiting-download'].includes(window.__engineMode)) {
+        } else if (['activation', 'download-error', 'waiting-download'].includes(window.__engineMode)
+          || (window.__engineMode === 'chinese-download' && args.source === 'zh')) {
           error = 'Activation needed';
           code = 'activation';
         } else if (window.__engineMode === 'error') error = 'Translation failed';
-        else result = args.texts.map(text => text.replaceAll('Hello', 'Привет').replaceAll('use shared', 'использовать общие').replaceAll('is a powerful', '— мощный'));
+        else if (args.source === 'zh' && detector === 'mixed') {
+          result = args.texts.map(text => text.replaceAll('警告去重与缺失条件处理', 'Обработка предупреждений')
+            .replaceAll('目标选择与回调测试', args.target === 'en' ? 'Callback test' : 'Проверка обратного вызова'));
+        } else result = args.texts.map(text => text.replaceAll('Hello', 'Привет').replaceAll('use shared', 'использовать общие')
+          .replaceAll('is a powerful', '— мощный').replaceAll('Layer / File(s)', 'Слой / Файлы'));
       }
       window.dispatchEvent(new CustomEvent('ght:res', { detail: JSON.stringify({ id, result, error, code }) }));
     });
@@ -236,7 +245,7 @@ test('edited and removed comments update controls; disabling a part restores ori
     await page.waitForFunction(() => document.querySelectorAll('.ght-toggle').length === 1);
     await page.evaluate(() => {
       window.__settings = { ...window.__settings, parts: { prBody: false } };
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => document.querySelectorAll('.ght-toggle, [data-ght-clone]').length === 0);
     assert.equal(await page.$eval('.markdown-body', el => el.hasAttribute('data-ght-hidden')), false);
@@ -441,7 +450,7 @@ test('disabling commit titles removes table translations and its control while l
     await settled();
     await page.evaluate(() => {
       window.__settings.parts = { commitTitles: false };
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => !document.querySelector('#directory [data-ght-clone], #directory .ght-toggle'));
     await page.waitForSelector('#readme .ght-toggle[data-state="done"]');
@@ -586,7 +595,7 @@ test('About supports classic markup and edited descriptions; disabling its setti
     assert.equal(await page.$$eval('#about .ght-toggle', els => els.length), 1);
     await page.evaluate(() => {
       window.__settings.parts = { about: false };
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => !document.querySelector('#about .ght-toggle, #about [data-ght-clone]'));
     await page.waitForSelector('#readme .ght-toggle[data-state="done"]');
@@ -700,7 +709,7 @@ test('referenced Issue commits respect the commit title and body settings indepe
     assert.equal(await page.$$eval('h1 [data-ght-clone], [data-testid="issue-body"] [data-ght-clone]', els => els.length), 0);
     await page.evaluate(() => {
       window.__settings.parts = { issues: true, commitTitles: false, commitBodies: false };
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForSelector('[data-testid="issue-body"] [data-ght-clone]');
     await settled();
@@ -1010,12 +1019,12 @@ test('new page settings can disable translation and navigation restores original
     await settled();
     await page.evaluate(() => {
       window.__settings.parts = { issues: false };
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => !document.querySelector('.ght-toggle, [data-ght-clone], [data-ght-source]'));
     await page.evaluate(() => {
       window.__settings.parts = { issues: true };
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => document.querySelectorAll('.ght-toggle[data-state="done"]').length === 3);
     await page.evaluate(() => { history.pushState({}, '', '/owner/repo/settings'); window.dispatchEvent(new PopStateEvent('popstate')); });
@@ -1060,12 +1069,12 @@ test('auto settings start and stop translation on the current page', async () =>
   try {
     await page.evaluate(() => {
       window.__settings.auto = true;
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForSelector('[data-ght-clone]');
     await page.evaluate(() => {
       window.__settings.auto = false;
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => !document.querySelector('[data-ght-source], [data-ght-clone]'));
     assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
@@ -1141,11 +1150,113 @@ test('enabling auto preserves a manual translation and its original view', async
     await page.click('.ght-fab');
     await page.evaluate(() => {
       window.__settings.auto = true;
-      for (const listener of window.__storageListeners) listener({ settings: {} }, 'local');
+      for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => document.querySelector('.ght-fab').textContent.includes('Translate all'));
     assert.equal(await page.$eval('[data-ght-source]', el => el.hasAttribute('data-ght-hidden')), false);
     await page.click('.ght-fab');
     assert.equal(await page.$eval('[data-ght-source]', el => el.hasAttribute('data-ght-hidden')), true);
+  } finally { await page.close(); }
+});
+
+test('a removed translation returns without another model call and preserves the source display', async () => {
+  const { page } = await fixture('<div class="markdown-body" style="display:grid!important">Hello layout</div>');
+  try {
+    await page.waitForSelector('[data-ght-clone]');
+    await page.$eval('[data-ght-clone]', clone => clone.remove());
+    await page.waitForSelector('[data-ght-clone]', { visible: true, timeout: 3000 });
+    assert.equal(await page.$eval('[data-ght-clone]', clone => clone.lang), 'ru');
+    await page.click('.ght-fab');
+    assert.deepEqual(await page.$eval('[data-ght-source]', source => [
+      getComputedStyle(source).display, source.style.getPropertyPriority('display'), window.__translationSources.length,
+    ]), ['grid', 'important', 1]);
+  } finally { await page.close(); }
+});
+
+test('removing the last blocked comment clears the download action', async () => {
+  const { page } = await fixture(comment(), { mode: 'activation' });
+  try {
+    await page.waitForSelector('.ght-toggle[data-state="activation"]');
+    await page.$eval('#pullrequest-1', el => el.remove());
+    await page.waitForFunction(() => document.querySelector('.ght-fab').textContent.includes('Show all originals'));
+    await page.click('.ght-fab');
+    assert.deepEqual(await page.evaluate(() => window.__preparedSources), []);
+  } finally { await page.close(); }
+});
+
+test('body replacement and continuous unrelated mutations still allow new comments to translate', async () => {
+  const { page } = await fixture(title);
+  try {
+    await page.waitForSelector('[data-ght-clone]');
+    await page.evaluate(html => {
+      const body = document.createElement('body');
+      body.innerHTML = html;
+      document.body.replaceWith(body);
+      const clock = document.createElement('time');
+      document.body.append(clock);
+      window.__ticker = setInterval(() => { clock.textContent = String(Date.now()); }, 50);
+    }, comment('late', 'Hello replacement'));
+    await page.waitForSelector('#late [data-ght-clone]', { timeout: 4000 });
+    await page.evaluate(() => clearInterval(window.__ticker));
+    assert.equal(await page.$$eval('.ght-fab', els => els.length), 1);
+  } finally { await page.close(); }
+});
+
+test('empty and plaintext-only contenteditable drafts stay in the editor', async () => {
+  const { page } = await fixture(comment() + '<div contenteditable><p class="markdown-body">Hello draft</p></div><p class="markdown-body" contenteditable="plaintext-only">Hello private draft</p><article id="nested" class="markdown-body"><span contenteditable>Hello edit</span></article>');
+  try {
+    await page.waitForSelector('#pullrequest-1 [data-ght-clone]');
+    assert.equal(await page.$$eval('#nested[data-ght-source], [contenteditable][data-ght-source], [contenteditable] [data-ght-source]', els => els.length), 0);
+  } finally { await page.close(); }
+});
+
+test('current PR headings share a control and keep the issue number outside the translation', async () => {
+  const { page } = await fixture(`
+    <div data-component="PageHeader">
+      <div data-component="TitleArea"><div class="titleWithAction__abc">
+        <h1><span class="markdownTitle__abc">Hello title</span><span class="sr-only"> - #12</span></h1>
+      </div></div><div data-component="PH_Actions"><button>Edit</button></div>
+    </div>
+    <h2 data-component="PH_Title"><a href="#top"><span class="markdownTitle__abc">Hello title</span></a><span>#12</span></h2>`);
+  try {
+    await page.waitForFunction(() => document.querySelectorAll('[data-ght-clone]').length === 2);
+    assert.deepEqual(await page.$$eval('[data-ght-clone]', els => els.map(el => el.textContent)), ['Привет title', 'Привет title']);
+    assert.equal(await page.$$eval('.ght-toggle', els => els.length), 1);
+    await page.click('[data-component="PH_Actions"] .ght-toggle');
+    assert.equal(await page.$$eval('[data-ght-source]', els => els.every(el => !el.hasAttribute('data-ght-hidden'))), true);
+  } finally { await page.close(); }
+});
+
+test('mixed-language table cells use their own model and preserve paths and original markup', async () => {
+  const body = `<div class="markdown-body"><p>Hello review</p><markdown-accessiblity-table><table>
+    <thead><tr><th>Layer / File(s)</th></tr></thead><tbody>
+    <tr><td><strong>警告去重与缺失条件处理</strong><br><code>src/Observer.ts</code>, <code>tests/Observer.test.ts</code></td></tr>
+    <tr><td><a href="#callback">目标选择与回调测试</a> <code>observeAll</code></td></tr>
+    <tr><td>Уже по-русски</td></tr></tbody></table></markdown-accessiblity-table></div>`;
+  const { page } = await fixture(body, { detector: 'mixed', mode: 'chinese-download' });
+  try {
+    await page.waitForSelector('.ght-toggle[data-state="activation"]');
+    await page.click('.ght-toggle');
+    await page.waitForSelector('.ght-toggle[data-state="done"]');
+    assert.deepEqual(await page.evaluate(() => window.__preparedSources), ['zh']);
+    assert.deepEqual(await page.evaluate(() => window.__translationSources), ['en', 'zh', 'en', 'zh']);
+    const clone = '[data-ght-clone]';
+    assert.equal(await page.$eval(clone + ' th', el => el.textContent), 'Слой / Файлы');
+    assert.equal(await page.$eval(clone + ' td strong', el => el.textContent), 'Обработка предупреждений');
+    assert.deepEqual(await page.$eval(clone + ' td a', el => [el.textContent, el.getAttribute('href')]), ['Проверка обратного вызова', '#callback']);
+    assert.deepEqual(await page.$$eval(clone + ' td code', els => els.map(el => el.textContent)), ['src/Observer.ts', 'tests/Observer.test.ts', 'observeAll']);
+    assert.equal(await page.$eval(clone + ' tr:last-child td', el => el.textContent), 'Уже по-русски');
+    await page.click('.ght-toggle');
+    assert.equal(await page.$eval('[data-ght-source] td strong', el => el.textContent), '警告去重与缺失条件处理');
+  } finally { await page.close(); }
+});
+
+test('a table translates foreign cells when the surrounding review is in the target language', async () => {
+  const { page } = await fixture('<div class="markdown-body"><p>Hello review</p><table><tr><td>目标选择与回调测试</td></tr></table></div>', { target: 'en', detector: 'mixed' });
+  try {
+    await page.waitForSelector('[data-ght-clone] td');
+    assert.deepEqual(await page.evaluate(() => window.__translationSources), ['zh']);
+    assert.equal(await page.$eval('[data-ght-clone] p', el => el.textContent), 'Hello review');
+    assert.equal(await page.$eval('[data-ght-clone] td', el => el.textContent), 'Callback test');
   } finally { await page.close(); }
 });
