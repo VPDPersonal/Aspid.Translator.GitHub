@@ -124,7 +124,7 @@ h2:has(> .ght-control-about) {
   width: 16px;
   height: 16px;
   background: var(--ght-accent);
-  mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.35'%3E%3Ccircle cx='10' cy='10' r='9'/%3E%3Cellipse cx='10' cy='10' rx='4.4' ry='9'/%3E%3Cpath d='M10 1v18M2.5 5h15M1 10h18M2.5 15h15'/%3E%3C/svg%3E");
+  mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.35'%3E%3Ccircle cx='10' cy='10' r='9'/%3E%3Cellipse cx='10' cy='10' rx='4.4' ry='9'/%3E%3Cpath d='M1 10h18'/%3E%3C/svg%3E");
 }
 
 .ght-fab::before { width: 15px; height: 15px; }
