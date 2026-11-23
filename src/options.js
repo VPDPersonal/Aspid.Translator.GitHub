@@ -101,6 +101,9 @@ async function showShortcut() {
   const shortcut = commands.find(command => command.name === 'toggle-translation')?.shortcut;
   $('shortcut').textContent = shortcut || t('shortcutUnassigned');
   $('shortcut').dir = shortcut ? 'ltr' : 'auto';
+  const edit = $('edit-shortcut');
+  edit.title = t('shortcutEdit');
+  edit.setAttribute('aria-label', [t('shortcutLabel'), $('shortcut').textContent, edit.title].join(', '));
 }
 
 $('edit-shortcut').addEventListener('click', event => {
