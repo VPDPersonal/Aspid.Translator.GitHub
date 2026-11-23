@@ -320,6 +320,23 @@ test('every supported UI locale provides both page-wide commands', async () => {
   }
 });
 
+test('a PR comment uses the same gap between reactions and the translation button', async () => {
+  const { page } = await fixture(comment());
+  try {
+    await page.waitForSelector('.comment-reactions .ght-toggle[data-state="done"]');
+    await page.addStyleTag({ content: '.js-pick-reaction { display: flex } .tmp-mr-1 { margin-right: 4px }' });
+    const gaps = await page.$eval('.comment-reactions', row => {
+      const form = row.querySelector('form');
+      form.className = 'js-pick-reaction';
+      form.firstElementChild.classList.add('tmp-mr-1');
+      form.insertAdjacentHTML('beforeend', '<button class="tmp-mr-1" type="button">👀 1</button>');
+      const [smile, eyes, translate] = [...row.querySelectorAll('button')].map(button => button.getBoundingClientRect());
+      return [eyes.left - smile.right, translate.left - eyes.right];
+    });
+    assert.deepEqual(gaps, [4, 4]);
+  } finally { await page.close(); }
+});
+
 test('a long reaction row wraps the translation button without overflow on narrow screens', async () => {
   const { page, settled } = await fixture(comment());
   try {

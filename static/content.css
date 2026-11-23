@@ -27,6 +27,11 @@
   max-width: 100%;
 }
 
+/* GitHub already adds trailing space to each reaction in this form. */
+.comment-reactions:has(.js-pick-reaction .tmp-mr-1) > .ght-control-slot {
+  margin-inline-start: 0;
+}
+
 .ght-control-footer {
   display: flex;
   margin: 0;
