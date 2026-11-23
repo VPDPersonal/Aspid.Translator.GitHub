@@ -293,9 +293,9 @@
     "message": "a fordító nem válaszol; próbálja újra",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Billentyűparancs",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Fordítás / eredeti",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Beállítás",

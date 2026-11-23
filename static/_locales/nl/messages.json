@@ -293,9 +293,9 @@
     "message": "de vertaler reageert niet meer; probeer het opnieuw",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Sneltoets",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Vertaling / origineel",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Sneltoets instellen",

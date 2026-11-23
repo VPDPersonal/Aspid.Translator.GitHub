@@ -293,9 +293,9 @@
     "message": "번역기가 응답하지 않습니다. 다시 시도해 주세요",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "단축키",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "번역 / 원문",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "단축키 설정",

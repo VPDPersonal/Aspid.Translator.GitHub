@@ -293,9 +293,9 @@
     "message": "prevajalnik se ne odziva; poskusite znova",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Bližnjica na tipkovnici",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Prevod / izvirnik",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Nastavi bližnjico",

@@ -293,9 +293,9 @@
     "message": "ಅನುವಾದಕ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ; ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "ಕೀಬೋರ್ಡ್ ಶಾರ್ಟ್‌ಕಟ್",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "ಅನುವಾದ / ಮೂಲ",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "ಶಾರ್ಟ್‌ಕಟ್ ಹೊಂದಿಸಿ",

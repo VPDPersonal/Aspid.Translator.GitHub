@@ -293,9 +293,9 @@
     "message": "توقف المترجم عن الاستجابة؛ حاول مرة أخرى",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "اختصار لوحة المفاتيح",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "الترجمة / الأصل",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "تعيين الاختصار",

@@ -293,9 +293,9 @@
     "message": "ตัวแปลภาษาไม่ตอบสนอง โปรดลองอีกครั้ง",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "แป้นพิมพ์ลัด",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "คำแปล / ต้นฉบับ",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "ตั้งค่าแป้นพิมพ์ลัด",

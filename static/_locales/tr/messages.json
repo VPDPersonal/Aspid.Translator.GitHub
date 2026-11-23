@@ -293,9 +293,9 @@
     "message": "çevirmen yanıt vermiyor; tekrar deneyin",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Klavye kısayolu",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Çeviri / özgün metin",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Kısayolu ayarla",

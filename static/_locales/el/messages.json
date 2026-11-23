@@ -293,9 +293,9 @@
     "message": "ο μεταφραστής δεν αποκρίνεται· δοκιμάστε ξανά",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Συντόμευση πληκτρολογίου",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Μετάφραση / πρωτότυπο",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Ορισμός συντόμευσης",

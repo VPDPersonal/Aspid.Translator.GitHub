@@ -293,9 +293,9 @@
     "message": "翻訳機能が応答していません。もう一度お試しください",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "キーボード ショートカット",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "翻訳 / 原文",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "ショートカットを設定",

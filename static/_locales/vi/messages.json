@@ -293,9 +293,9 @@
     "message": "trình dịch không phản hồi; hãy thử lại",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Phím tắt",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Bản dịch / bản gốc",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Đặt phím tắt",

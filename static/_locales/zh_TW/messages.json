@@ -293,9 +293,9 @@
     "message": "翻譯器未回應，請重試",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "快速鍵",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "譯文 / 原文",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "設定快速鍵",

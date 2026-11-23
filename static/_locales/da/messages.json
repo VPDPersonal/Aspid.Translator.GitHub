@@ -293,9 +293,9 @@
     "message": "oversætteren svarer ikke; prøv igen",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Tastaturgenvej",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Oversættelse / original",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Indstil genvej",

@@ -293,9 +293,9 @@
     "message": "மொழிபெயர்ப்பான் பதிலளிக்கவில்லை; மீண்டும் முயற்சிக்கவும்",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "விசைப்பலகைக் குறுக்குவழி",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "மொழிபெயர்ப்பு / அசல்",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "குறுக்குவழியை அமை",

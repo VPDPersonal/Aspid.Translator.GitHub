@@ -293,9 +293,9 @@
     "message": "prevoditelj ne odgovara; pokušajte ponovno",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Tipkovnički prečac",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Prijevod / izvornik",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Postavi prečac",

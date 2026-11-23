@@ -293,9 +293,9 @@
     "message": "tłumacz nie odpowiada; spróbuj ponownie",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Skrót klawiaturowy",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Tłumaczenie / oryginał",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Ustaw skrót",

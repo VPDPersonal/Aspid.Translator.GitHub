@@ -293,9 +293,9 @@
     "message": "অনুবাদক সাড়া দিচ্ছে না; আবার চেষ্টা করুন",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "কীবোর্ড শর্টকাট",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "অনুবাদ / মূল লেখা",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "শর্টকাট সেট করুন",

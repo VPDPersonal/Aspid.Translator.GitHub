@@ -293,9 +293,9 @@
     "message": "переводчик не отвечает; попробуйте ещё раз",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Горячая клавиша",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Перевод / оригинал",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Настроить",

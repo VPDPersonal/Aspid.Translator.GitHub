@@ -293,9 +293,9 @@
     "message": "అనువాదకం స్పందించడం లేదు; మళ్లీ ప్రయత్నించండి",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "కీబోర్డ్ సత్వరమార్గం",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "అనువాదం / మూలం",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "సత్వరమార్గాన్ని సెట్ చేయండి",

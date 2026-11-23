@@ -293,9 +293,9 @@
     "message": "překladač přestal odpovídat; zkuste to znovu",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Klávesová zkratka",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Překlad / originál",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Nastavit zkratku",

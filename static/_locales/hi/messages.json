@@ -293,9 +293,9 @@
     "message": "अनुवादक जवाब नहीं दे रहा है; फिर से कोशिश करें",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "कीबोर्ड शॉर्टकट",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "अनुवाद / मूल पाठ",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "शॉर्टकट सेट करें",

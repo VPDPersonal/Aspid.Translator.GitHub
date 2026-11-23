@@ -293,9 +293,9 @@
     "message": "vertėjas neatsako; bandykite dar kartą",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Spartusis klavišas",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Vertimas / originalas",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Nustatyti spartųjį klavišą",

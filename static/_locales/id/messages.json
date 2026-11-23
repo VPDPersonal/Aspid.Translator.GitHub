@@ -293,9 +293,9 @@
     "message": "penerjemah tidak merespons; coba lagi",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Pintasan keyboard",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Terjemahan / asli",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Atur pintasan",

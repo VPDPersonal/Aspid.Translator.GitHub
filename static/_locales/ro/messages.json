@@ -293,9 +293,9 @@
     "message": "traducătorul nu mai răspunde; încercați din nou",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Comandă rapidă de la tastatură",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Traducere / original",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Configurează comanda rapidă",

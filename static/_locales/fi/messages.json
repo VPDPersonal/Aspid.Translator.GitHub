@@ -293,9 +293,9 @@
     "message": "kääntäjä ei vastaa; yritä uudelleen",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
   },
-  "shortcutTitle": {
-    "message": "Pikanäppäin",
-    "description": "Keyboard shortcut setting."
+  "shortcutLabel": {
+    "message": "Käännös / alkuperäinen",
+    "description": "Short settings label for toggling page translation."
   },
   "shortcutEdit": {
     "message": "Määritä pikanäppäin",
