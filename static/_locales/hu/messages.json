@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Automatikus fordítás az oldal megnyitásakor",
+    "message": "Automatikus fordítás",
     "description": "Switch."
   },
   "settingsAutoHint": {

@@ -6,7 +6,15 @@ import { PROVIDERS, getProvider } from './providers/index.js';
 const $ = (id) => document.getElementById(id);
 const form = $('form');
 const partSwitch = (key) => form.querySelector(`[data-part="${key}"]`);
+const autoSetting = $('auto').closest('.auto-setting');
 let hideToast;
+
+for (const event of ['pointerenter', 'focusin']) {
+  autoSetting.addEventListener(event, () => autoSetting.classList.remove('dismissed'));
+}
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') autoSetting.classList.add('dismissed');
+});
 
 function readForm() {
   return {

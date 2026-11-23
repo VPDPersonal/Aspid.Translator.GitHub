@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Αυτόματη μετάφραση όταν ανοίγει μια σελίδα",
+    "message": "Αυτόματη μετάφραση",
     "description": "Switch."
   },
   "settingsAutoHint": {

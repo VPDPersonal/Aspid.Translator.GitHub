@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Terjemahkan otomatis saat halaman dibuka",
+    "message": "Terjemahkan otomatis",
     "description": "Switch."
   },
   "settingsAutoHint": {

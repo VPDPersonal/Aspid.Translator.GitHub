@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "पेज उघडल्यावर आपोआप अनुवाद करा",
+    "message": "आपोआप अनुवाद करा",
     "description": "Switch."
   },
   "settingsAutoHint": {

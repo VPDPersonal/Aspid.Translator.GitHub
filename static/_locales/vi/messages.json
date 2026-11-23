@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Tự động dịch khi mở trang",
+    "message": "Tự động dịch",
     "description": "Switch."
   },
   "settingsAutoHint": {

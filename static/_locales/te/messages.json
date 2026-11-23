@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "పేజీ తెరిచినప్పుడు ఆటోమేటిక్‌గా అనువదించు",
+    "message": "ఆటోమేటిక్‌గా అనువదించు",
     "description": "Switch."
   },
   "settingsAutoHint": {

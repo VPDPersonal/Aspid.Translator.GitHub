@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "לתרגם אוטומטית כשדף נפתח",
+    "message": "לתרגם אוטומטית",
     "description": "Switch."
   },
   "settingsAutoHint": {

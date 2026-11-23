@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Samodejno prevedi ob odprtju strani",
+    "message": "Samodejno prevedi",
     "description": "Switch."
   },
   "settingsAutoHint": {

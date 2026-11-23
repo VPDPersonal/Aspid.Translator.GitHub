@@ -67,6 +67,13 @@
     .general .row { padding: 16px 18px; }
     .general .row:has(select) { display: grid; gap: 8px; font-weight: 600; }
     .divider { height: 1px; margin-inline: 18px; background: var(--hair); }
+    .auto-setting { position: relative; }
+    .auto-tip {
+      display: none; position: absolute; z-index: 1; inset-block-start: 100%; inset-inline: 12px auto;
+      max-width: calc(100% - 24px); padding: 6px 10px; border: 1px solid var(--line);
+      border-radius: 6px; background: var(--strong); color: var(--panel); font-size: 13px;
+    }
+    .auto-setting:not(.dismissed):is(:hover, :has(:focus-visible)) .auto-tip { display: block; }
     .text { display: grid; gap: 4px; min-width: 0; }
     .hint { color: var(--muted); font-size: 13px; text-wrap: pretty; }
     .group-body p { padding: 4px 12px 6px; }
@@ -143,10 +150,13 @@
             </div>
           </div>
           <div class="divider"></div>
-          <label class="row">
-            <span class="text"><span data-i18n="settingsAuto"></span><span class="hint" data-i18n="settingsAutoHint"></span></span>
-            <input type="checkbox" role="switch" class="switch" id="auto">
-          </label>
+          <div class="auto-setting">
+            <label class="row">
+              <span data-i18n="settingsAuto"></span>
+              <input type="checkbox" role="switch" class="switch" id="auto" aria-describedby="auto-tip">
+            </label>
+            <span class="auto-tip" id="auto-tip" role="tooltip" data-i18n="settingsAutoHint"></span>
+          </div>
           <div class="divider"></div>
           <div class="row shortcut">
             <span class="text"><span data-i18n="shortcutTitle"></span><span class="hint" data-i18n="shortcutToggle"></span></span>

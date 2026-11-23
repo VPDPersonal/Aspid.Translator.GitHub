@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "페이지를 열면 자동으로 번역",
+    "message": "자동으로 번역",
     "description": "Switch."
   },
   "settingsAutoHint": {

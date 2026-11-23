@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Käännä automaattisesti, kun sivu avautuu",
+    "message": "Käännä automaattisesti",
     "description": "Switch."
   },
   "settingsAutoHint": {

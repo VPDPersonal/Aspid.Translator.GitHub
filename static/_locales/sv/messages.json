@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Översätt automatiskt när en sida öppnas",
+    "message": "Översätt automatiskt",
     "description": "Switch."
   },
   "settingsAutoHint": {

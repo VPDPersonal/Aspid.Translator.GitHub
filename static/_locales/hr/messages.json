@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Automatski prevedi pri otvaranju stranice",
+    "message": "Automatski prevedi",
     "description": "Switch."
   },
   "settingsAutoHint": {

@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Tradu automat când se deschide o pagină",
+    "message": "Tradu automat",
     "description": "Switch."
   },
   "settingsAutoHint": {

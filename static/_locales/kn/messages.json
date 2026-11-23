@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "ಪುಟ ತೆರೆದಾಗ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಅನುವಾದಿಸಿ",
+    "message": "ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಅನುವಾದಿಸಿ",
     "description": "Switch."
   },
   "settingsAutoHint": {

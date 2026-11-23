@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Sayfa açıldığında otomatik çevir",
+    "message": "Otomatik çevir",
     "description": "Switch."
   },
   "settingsAutoHint": {

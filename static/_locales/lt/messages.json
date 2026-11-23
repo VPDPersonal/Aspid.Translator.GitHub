@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Versti automatiškai atidarius puslapį",
+    "message": "Versti automatiškai",
     "description": "Switch."
   },
   "settingsAutoHint": {

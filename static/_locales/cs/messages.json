@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Překládat automaticky při otevření stránky",
+    "message": "Překládat automaticky",
     "description": "Switch."
   },
   "settingsAutoHint": {

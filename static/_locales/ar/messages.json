@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "الترجمة تلقائيًا عند فتح صفحة",
+    "message": "الترجمة تلقائيًا",
     "description": "Switch."
   },
   "settingsAutoHint": {

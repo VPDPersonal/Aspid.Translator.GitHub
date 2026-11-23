@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Переводить автоматически при открытии страницы",
+    "message": "Переводить автоматически",
     "description": "Switch."
   },
   "settingsAutoHint": {
