@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "překladač přestal odpovídat; zkuste to znovu",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "Klávesová zkratka",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "Nastavit zkratku",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Přeložit vše / Zobrazit všechny originály",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Nepřiřazeno",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

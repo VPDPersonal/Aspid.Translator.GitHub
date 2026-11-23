@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "prevajalnik se ne odziva; poskusite znova",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "Bližnjica na tipkovnici",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "Nastavi bližnjico",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Prevedi vse / Prikaži vse izvirnike",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Ni dodeljena",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

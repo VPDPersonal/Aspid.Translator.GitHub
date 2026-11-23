@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "traducătorul nu mai răspunde; încercați din nou",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "Comandă rapidă de la tastatură",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "Configurează comanda rapidă",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Tradu tot / Afișează toate originalele",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Neatribuită",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

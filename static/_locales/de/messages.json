@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "der Übersetzer reagiert nicht mehr; bitte erneut versuchen",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "Tastenkürzel",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "Tastenkürzel festlegen",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Alles übersetzen / Alle Originale anzeigen",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Nicht zugewiesen",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

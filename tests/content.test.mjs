@@ -50,6 +50,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
     window.__translationSources = [];
     window.__preparedSources = [];
     window.__cldCalls = 0;
+    chrome.runtime = { onMessage: { addListener: listener => { window.__onMessage = listener; } } };
     chrome.storage = {
       local: { get: async () => ({ settings: window.__settings }) },
       onChanged: { addListener: listener => window.__storageListeners.push(listener) },
@@ -263,6 +264,19 @@ test('manual mode starts from the global button; untranslated text has no local 
     await page.waitForFunction(() => window.__requests.includes('detector.detect'));
     assert.equal(await page.$$eval('.ght-toggle', els => els.length), 0);
     assert.equal(await page.$$eval('[data-ght-clone]', els => els.length), 0);
+  } finally { await page.close(); }
+});
+
+test('the keyboard command starts manual translation and toggles the original', async () => {
+  const { page } = await fixture(comment(), { auto: false });
+  try {
+    const command = () => page.evaluate(() => window.__onMessage('toggle-translation'));
+    await command();
+    await page.waitForSelector('[data-ght-clone]', { visible: true });
+    await command();
+    await page.waitForSelector('[data-ght-clone]', { hidden: true });
+    await command();
+    await page.waitForSelector('[data-ght-clone]', { visible: true });
   } finally { await page.close(); }
 });
 

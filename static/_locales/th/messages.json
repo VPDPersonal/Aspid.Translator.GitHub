@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "ตัวแปลภาษาไม่ตอบสนอง โปรดลองอีกครั้ง",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "แป้นพิมพ์ลัด",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "ตั้งค่าแป้นพิมพ์ลัด",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "แปลทั้งหมด / แสดงต้นฉบับทั้งหมด",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "ยังไม่ได้กำหนด",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

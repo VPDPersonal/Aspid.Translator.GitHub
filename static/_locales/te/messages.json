@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "అనువాదకం స్పందించడం లేదు; మళ్లీ ప్రయత్నించండి",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "కీబోర్డ్ సత్వరమార్గం",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "సత్వరమార్గాన్ని సెట్ చేయండి",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "అన్నింటినీ అనువదించు / అన్ని అసలు పాఠాలను చూపించు",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "కేటాయించలేదు",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

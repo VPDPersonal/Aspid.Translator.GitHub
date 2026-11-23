@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "翻訳機能が応答していません。もう一度お試しください",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "キーボード ショートカット",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "ショートカットを設定",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "すべて翻訳 / すべて原文で表示",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "未設定",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

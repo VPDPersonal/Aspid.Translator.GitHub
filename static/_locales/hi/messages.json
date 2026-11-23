@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "अनुवादक जवाब नहीं दे रहा है; फिर से कोशिश करें",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "कीबोर्ड शॉर्टकट",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "शॉर्टकट सेट करें",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "सभी का अनुवाद करें / सभी मूल पाठ दिखाएँ",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "सेट नहीं है",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

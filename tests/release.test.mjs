@@ -89,6 +89,12 @@ test('the packaged extension translates a GitHub page and applies saved options 
     const settings = await browser.newPage();
     await settings.goto(`chrome-extension://${id}/options.html`);
     await settings.waitForSelector('#form:not([inert])');
+    const shortcut = await settings.evaluate(async () => {
+      const commands = await chrome.commands.getAll();
+      return commands.find(command => command.name === 'toggle-translation')?.shortcut;
+    });
+    assert.match(shortcut, /J/i);
+    assert.equal(await settings.$eval('#shortcut', el => el.textContent), shortcut);
     await settings.evaluate(() => chrome.storage.local.set({
       settings: { target: 'invalid-target', auto: 'false', parts: { prTitle: false, comments: 'false' } },
     }));

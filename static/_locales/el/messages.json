@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "ο μεταφραστής δεν αποκρίνεται· δοκιμάστε ξανά",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "Συντόμευση πληκτρολογίου",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "Ορισμός συντόμευσης",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Μετάφραση όλων / Εμφάνιση όλων των πρωτοτύπων",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Δεν έχει οριστεί",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

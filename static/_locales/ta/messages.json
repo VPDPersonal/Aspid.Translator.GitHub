@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "மொழிபெயர்ப்பான் பதிலளிக்கவில்லை; மீண்டும் முயற்சிக்கவும்",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "விசைப்பலகைக் குறுக்குவழி",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "குறுக்குவழியை அமை",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "அனைத்தையும் மொழிபெயர் / அனைத்து அசல் உரைகளையும் காட்டு",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "அமைக்கப்படவில்லை",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

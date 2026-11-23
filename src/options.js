@@ -85,7 +85,24 @@ async function showLanguage(target) {
   renderTargets(target);
   renderProviders(form.querySelector('input[name="provider"]:checked')?.value);
   showCount();
+  await showShortcut();
 }
+
+async function showShortcut() {
+  const commands = await chrome.commands.getAll();
+  const shortcut = commands.find(command => command.name === 'toggle-translation')?.shortcut;
+  $('shortcut').textContent = shortcut || t('shortcutUnassigned');
+  $('shortcut').dir = shortcut ? 'ltr' : 'auto';
+}
+
+$('edit-shortcut').addEventListener('click', event => {
+  event.preventDefault();
+  chrome.tabs.create({ url: event.currentTarget.href });
+});
+window.addEventListener('focus', showShortcut);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) showShortcut();
+});
 
 async function init() {
   const settings = await loadSettings();

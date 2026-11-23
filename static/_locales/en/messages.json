@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "the translator stopped responding; try again",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutTitle": {
+    "message": "Keyboard shortcut",
+    "description": "Keyboard shortcut setting."
+  },
+  "shortcutEdit": {
+    "message": "Set shortcut",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Translate all / Show all originals",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Not assigned",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

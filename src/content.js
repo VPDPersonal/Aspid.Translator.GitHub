@@ -620,6 +620,10 @@ function scheduleMaintain() {
   }, 250);
 }
 
+chrome.runtime.onMessage.addListener((message) => {
+  if (message === 'toggle-translation' && fab?.isConnected) onFabClick();
+});
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes.settings) return;
   const previous = state.settings;
