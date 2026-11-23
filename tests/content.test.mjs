@@ -50,15 +50,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
     window.__translationSources = [];
     window.__preparedSources = [];
     window.__cldCalls = 0;
-    chrome.runtime = {
-      onMessage: { addListener: listener => { window.__onMessage = listener; } },
-      sendMessage: async () => {
-        const shortcut = window.__shortcut;
-        window.__shortcutReads = (window.__shortcutReads ?? 0) + 1;
-        return shortcut;
-      },
-    };
-    window.__shortcut = '⌥⇧J';
+    chrome.runtime = { onMessage: { addListener: listener => { window.__onMessage = listener; } } };
     chrome.storage = {
       local: { get: async () => ({ settings: window.__settings }) },
       onChanged: { addListener: listener => window.__storageListeners.push(listener) },
@@ -285,48 +277,6 @@ test('the keyboard command starts manual translation and toggles the original', 
     await page.waitForSelector('[data-ght-clone]', { hidden: true });
     await command();
     await page.waitForSelector('[data-ght-clone]', { visible: true });
-  } finally { await page.close(); }
-});
-
-test('the default page shortcut respects text editors, key repeats and changed bindings', async () => {
-  const { page } = await fixture(comment() + '<textarea id="editor"></textarea>', { auto: false });
-  const clone = '[data-ght-clone]';
-  const withShortcutModifiers = async action => {
-    await page.keyboard.down('Alt');
-    await page.keyboard.down('Shift');
-    await action();
-    await page.keyboard.up('Shift');
-    await page.keyboard.up('Alt');
-  };
-  const pressShortcut = () => withShortcutModifiers(() => page.keyboard.press('J'));
-  try {
-    await page.focus('#editor');
-    await pressShortcut();
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
-    await page.$eval('#editor', el => el.blur());
-    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyJ', altKey: true, shiftKey: true })));
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
-    await pressShortcut();
-    await page.waitForSelector(clone, { visible: true });
-    await withShortcutModifiers(async () => {
-      await page.keyboard.down('J');
-      await page.waitForSelector(clone, { hidden: true });
-      await page.keyboard.down('J');
-      await page.keyboard.up('J');
-    });
-    assert.equal(await page.$eval(clone, el => el.hasAttribute('data-ght-hidden')), true);
-
-    for (const shortcut of ['⇧⌘Y', '']) {
-      const reads = await page.evaluate(shortcut => {
-        const reads = window.__shortcutReads;
-        window.__shortcut = shortcut;
-        window.dispatchEvent(new FocusEvent('focus'));
-        return reads;
-      }, shortcut);
-      await page.waitForFunction(reads => window.__shortcutReads > reads, {}, reads);
-      await pressShortcut();
-      assert.equal(await page.$eval(clone, el => el.hasAttribute('data-ght-hidden')), true);
-    }
   } finally { await page.close(); }
 });
 

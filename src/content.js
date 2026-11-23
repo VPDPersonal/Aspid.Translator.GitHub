@@ -624,27 +624,6 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message === 'toggle-translation' && fab?.isConnected) onFabClick();
 });
 
-let defaultShortcutAssigned = false;
-
-async function refreshShortcut() {
-  const shortcut = await chrome.runtime.sendMessage('get-translation-shortcut').catch(() => '');
-  defaultShortcutAssigned = /^(?:⌥⇧|⇧⌥|Alt\+Shift\+|Shift\+Alt\+)J$/i.test(shortcut);
-}
-
-// Handle the default binding when the browser passes the keystroke through to GitHub.
-window.addEventListener('keydown', event => {
-  if (!defaultShortcutAssigned || !fab?.isConnected || event.code !== 'KeyJ' || !event.altKey || !event.shiftKey
-    || event.ctrlKey || event.metaKey || event.getModifierState('AltGraph') || event.repeat || event.isComposing
-    || !event.isTrusted || event.defaultPrevented) return;
-  if (event.composedPath().some(node => node instanceof HTMLElement && (node.isContentEditable
-    || node.matches('input, textarea, select, [role="textbox"]')))) return;
-  event.preventDefault();
-  onFabClick();
-});
-
-window.addEventListener('focus', refreshShortcut);
-refreshShortcut();
-
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes.settings) return;
   const previous = state.settings;
