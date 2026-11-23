@@ -3,8 +3,11 @@
 
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
-chrome.commands.onCommand.addListener((command, tab) => {
-  if (command !== 'toggle-translation' || tab?.id == null) return;
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  if (command !== 'toggle-translation') return;
+  // Some browsers dispatch commands without the optional tab argument.
+  const tabId = tab?.id ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]?.id;
+  if (tabId == null) return;
   // Only supported GitHub tabs have a content script listening.
-  chrome.tabs.sendMessage(tab.id, command, { frameId: 0 }).catch(() => {});
+  await chrome.tabs.sendMessage(tabId, command, { frameId: 0 }).catch(() => {});
 });
