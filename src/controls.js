@@ -46,13 +46,13 @@ function directoryPosition(table) {
   const header = directoryHeader(table);
   if (!header) return null;
   const links = [...header.querySelectorAll('a[href*="/commits/"]')];
-  if (!links.length) return { parent: header, compact: true };
+  if (!links.length) return { parent: header };
   // Desktop and mobile history links may live in different visibility wrappers.
   let parent = links[0].parentElement;
   while (parent !== header && (!links.every(link => parent.contains(link)) || getComputedStyle(parent).display === 'none')) {
     parent = parent.parentElement;
   }
-  return { parent, before: branch(links[0], parent), compact: true };
+  return { parent };
 }
 
 export function controlScope(el, kind) {
@@ -68,7 +68,7 @@ export function controlScope(el, kind) {
     const title = kind === 'issues'
       ? document.querySelector('[data-testid="issue-title"], h1 .js-issue-title') ?? el
       : document.querySelector('h1 .js-issue-title, h1 .markdown-title') ?? el;
-    return { root: title.closest('h1, h2') ?? title.parentElement, kind: 'title', inline: true };
+    return { root: title.closest('h1, h2') ?? title.parentElement, kind: 'title', titleKind: pageKind };
   }
   if (kind === 'commitTitles' || kind === 'commitBodies') {
     const table = kind === 'commitTitles' && directoryTable(el);
@@ -79,7 +79,7 @@ export function controlScope(el, kind) {
     // The normal and sticky headings represent the same title and share one switch.
     const title = document.querySelector(PR_MAIN_TITLE) ?? el;
     const heading = title.closest('h1, h2, .gh-header-title') ?? title.parentElement;
-    return { root: heading.closest('[class*="titleWithAction"]') ?? heading, kind: 'title' };
+    return { root: heading.closest('[class*="titleWithAction"]') ?? heading, kind: 'title', titleKind: 'pull' };
   }
   if (kind === 'readme') return { root: el, kind: 'document' };
   if (kind === 'about') return { root: el.closest('[class*="sidebarSection"], .BorderGrid-cell') ?? el.parentElement, kind: 'about' };
@@ -94,16 +94,16 @@ function branch(node, parent) {
 function documentHeader(el) {
   const blob = el.closest('[class*="blobContainer"], .file');
   const actions = blob?.querySelector('.react-blob-header-edit-and-raw-actions');
-  if (actions) return { parent: actions.parentElement, before: actions, compact: true };
+  if (actions) return { parent: actions.parentElement, before: actions };
   const classic = el.closest('#readme')?.querySelector('.Box-header');
-  if (classic) return { parent: classic, compact: false };
+  if (classic) return { parent: classic };
   // Repository tabs and their actions are siblings of the rendered README.
   for (let parent = el.parentElement, depth = 0; parent && depth < 4; parent = parent.parentElement, depth++) {
     for (const child of parent.children) {
       if (child.contains(el) || !child.querySelector('nav .octicon-book')) continue;
       const before = child.querySelector('[class*="readmeHeaderSlot"]')
         ?? child.querySelector('.octicon-list-unordered')?.closest('button');
-      return { parent: child, before: before && branch(before, child), compact: false };
+      return { parent: child, before: before && branch(before, child) };
     }
   }
   return null;
@@ -148,17 +148,40 @@ function commitPosition(root, el) {
   return { parent: title.parentElement, before: title.nextSibling };
 }
 
-function titlePosition(root) {
+function titlePosition(root, titleKind) {
+  if (titleKind === 'discussion') {
+    const number = root.querySelector('[class*="issueNumberText"], .gh-header-number');
+    return { parent: number ?? root, compact: true, inlineTitle: true };
+  }
   const header = root.closest('[data-component="PageHeader"]');
   const actions = header?.querySelector(':scope > [data-component="PH_Actions"]')
     ?? root.closest('.gh-header')?.querySelector('.gh-header-actions');
+  if (titleKind === 'issue') {
+    // GitHub renders separate action rows for the regular and narrow layouts.
+    const context = header?.querySelector('[data-component="PageHeader.ContextAreaActions"]');
+    const visible = [actions, context].find(row => row?.getClientRects().length);
+    if (visible) {
+      const parent = visible.querySelector('[class*="menuActionsContainer"]') ?? visible;
+      const createIssue = parent.querySelector('a[href*="/issues/new"], [data-testid="new-issue-button"]');
+      return { parent, before: (createIssue && branch(createIssue, parent)) ?? parent.firstChild };
+    }
+  }
   if (actions && !actions.hidden && getComputedStyle(actions).display !== 'none') {
-    return { parent: actions, before: actions.firstChild, compact: true };
+    if (titleKind === 'pull') {
+      const overview = [...actions.querySelectorAll(':is(a, button):not([data-ght-ui] *)')].find(node =>
+        node.matches('a[href*="/pull/"][href*="/overview"]') || node.textContent.includes('Try the Overview page'));
+      if (overview) return { parent: actions, before: branch(overview, actions).nextSibling };
+    }
+    return { parent: actions, before: actions.firstChild };
   }
   // GitHub renders an empty, hidden actions area before its controls load.
   // Use the same grid area without exposing or changing GitHub's hidden controls.
-  if (header) return { parent: header, before: actions, compact: true, titleStandalone: true };
-  return { parent: root, compact: true };
+  if (header) return { parent: header, before: actions, titleStandalone: true };
+  if (titleKind === 'issue') {
+    const number = root.querySelector('[class*="issueNumberText"], .gh-header-number');
+    return { parent: number ?? root, inlineTitle: true };
+  }
+  return { parent: root };
 }
 
 function position(group) {
@@ -182,18 +205,12 @@ function position(group) {
     const actions = group.root.querySelector('.feed-actions, [data-testid="feed-actions"]');
     return { parent: group.root, before: actions && branch(actions, group.root), footer: true };
   }
-  if (group.kind === 'title') {
-    if (group.inline) {
-      const number = group.root.querySelector('[class*="issueNumberText"], .gh-header-number');
-      return { parent: number ?? group.root, compact: true, inlineTitle: true };
-    }
-    return titlePosition(group.root);
-  }
+  if (group.kind === 'title') return titlePosition(group.root, group.titleKind);
   if (group.kind === 'commit') return { ...commitPosition(group.root, el), compact: true };
   if (group.kind === 'about') {
     const heading = group.root.querySelector('h2');
-    const action = heading?.querySelector('button, a');
-    if (heading) return { parent: heading, before: action && branch(action, heading), compact: true };
+    const action = heading?.querySelector(':is(button, a):not([data-ght-ui] *)');
+    if (heading) return { parent: action?.parentElement ?? heading, before: action };
   }
   if (group.kind === 'document') {
     const header = documentHeader(el);
@@ -202,9 +219,7 @@ function position(group) {
   if (group.kind === 'comment') {
     const reactions = [...group.root.querySelectorAll(REACTIONS)]
       .find(node => !node.closest('form, [data-ght-clone], .markdown-body') && node.closest(COMMENT) === group.root);
-    if (reactions) {
-      return { parent: reactions, compact: false };
-    }
+    if (reactions) return { parent: reactions };
   }
   // Older comment layouts and documents without a toolbar use a quiet footer.
   const anchor = el.tagName === 'TD' ? el.closest('table') ?? el : el;
@@ -236,8 +251,10 @@ export function placeControl(group) {
   const target = position(group);
   if (!target?.parent?.isConnected) return;
   const { slot, button } = group.control;
+  const iconOnly = !target.footer && (['directory', 'about', 'document', 'comment'].includes(group.kind)
+    || group.kind === 'title' && group.titleKind !== 'discussion');
   slot.classList.toggle('ght-control-footer', Boolean(target.footer));
-  slot.classList.toggle('ght-control-document', group.kind === 'document');
+  slot.classList.toggle('ght-control-icon', iconOnly);
   slot.classList.toggle('ght-control-title', group.kind === 'title');
   slot.classList.toggle('ght-control-title-inline', Boolean(target.inlineTitle));
   slot.classList.toggle('ght-control-title-standalone', Boolean(target.titleStandalone));
@@ -249,7 +266,7 @@ export function placeControl(group) {
   button.classList.toggle('ght-toggle-compact', Boolean(target.compact));
   const before = target.before ?? null;
   // Avoid observing our own no-op placements as GitHub content changes.
-  if (slot.parentNode !== target.parent || (before && before !== slot && slot.nextSibling !== before)) {
+  if (slot.parentNode !== target.parent || (before !== slot && slot.nextSibling !== before)) {
     target.parent.insertBefore(slot, before);
   }
   if (group.kind === 'document') {

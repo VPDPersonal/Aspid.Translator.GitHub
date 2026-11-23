@@ -413,6 +413,7 @@ function updateControl(group) {
       : `part${jobs[0].kind.charAt(0).toUpperCase()}${jobs[0].kind.slice(1)}`;
   button.disabled = status === 'loading' || Boolean(downloading);
   button.dataset.state = status;
+  button.toggleAttribute('data-translated', done && !group.showOriginal);
   button.setAttribute('aria-label', `${t(scopeKey)}: ${text}`);
   button.setAttribute('aria-description', hint);
   button.setAttribute('aria-busy', String(button.disabled));
@@ -678,4 +679,7 @@ function applySettings(settings) {
   });
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);
+  window.addEventListener('resize', () => {
+    if (state.active && pageOf(location.pathname)?.kind === 'issue') scheduleMaintain();
+  });
 })();
