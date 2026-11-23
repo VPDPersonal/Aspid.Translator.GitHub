@@ -220,20 +220,16 @@ export function createControl(onClick) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'ght-toggle';
-  const icon = document.createElement('span');
-  icon.className = 'ght-toggle-icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = '🌐';
   const label = document.createElement('span');
   label.className = 'ght-toggle-text';
-  button.append(icon, label);
+  button.append(label);
   button.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
     onClick();
   });
   slot.append(button);
-  return { slot, button, icon, label };
+  return { slot, button, label };
 }
 
 export function placeControl(group) {
@@ -241,6 +237,7 @@ export function placeControl(group) {
   if (!target?.parent?.isConnected) return;
   const { slot, button } = group.control;
   slot.classList.toggle('ght-control-footer', Boolean(target.footer));
+  slot.classList.toggle('ght-control-comment', group.kind === 'comment');
   slot.classList.toggle('ght-control-document', group.kind === 'document');
   slot.classList.toggle('ght-control-title', group.kind === 'title');
   slot.classList.toggle('ght-control-title-inline', Boolean(target.inlineTitle));

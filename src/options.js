@@ -18,6 +18,14 @@ function readForm() {
 }
 
 function showCount() {
+  const number = new Intl.NumberFormat(uiLanguage());
+  for (const group of form.querySelectorAll('details')) {
+    const selected = group.querySelectorAll('[data-part]:checked').length;
+    const total = group.querySelectorAll('[data-part]').length;
+    const count = group.querySelector('.group-count');
+    count.textContent = `${number.format(selected)} / ${number.format(total)}`;
+    count.title = t('settingsPartsCount', selected, total);
+  }
   const on = PARTS.filter((key) => partSwitch(key).checked).length;
   $('count').textContent = t('settingsPartsCount', on, PARTS.length);
 }

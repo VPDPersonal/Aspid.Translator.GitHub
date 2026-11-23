@@ -131,7 +131,7 @@ test('comment controls sit after reactions; global actions reset local choices a
   try {
     await page.waitForSelector('#pullrequest-1 .ght-toggle[data-state="done"]');
     await settled();
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Show all originals');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Show all originals');
     assert.equal(await page.$$eval('.ght-label', els => els.length), 0);
     assert.equal(await page.$$eval('.titleWithAction .ght-toggle', els => els.length), 1);
     assert.equal(await page.$eval('#pullrequest-1 .ght-toggle', el => el.closest('form') === null && el.closest('.comment-reactions') !== null), true);
@@ -257,7 +257,7 @@ test('manual mode starts from the global button; untranslated text has no local 
   const { page, settled } = await fixture(comment('pullrequest-1', 'Already Russian'), { auto: false });
   try {
     assert.equal(await page.$$eval('.ght-toggle', els => els.length), 0);
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
     await page.click('.ght-fab');
     await settled();
     await page.waitForFunction(() => window.__requests.includes('detector.detect'));
@@ -410,7 +410,7 @@ test('one header button switches all directory messages, independently from READ
 test('directory-only folder pages offer manual translation even when README translation is disabled', async () => {
   const { page, settled } = await fixture(directory, { path: '/owner/repo/tree/main/src', auto: false, parts: { readme: false } });
   try {
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
     await page.click('.ght-fab');
     await page.waitForSelector('#directory-header .ght-toggle[data-state="done"]');
     await settled();
@@ -1077,7 +1077,7 @@ test('auto settings start and stop translation on the current page', async () =>
       for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => !document.querySelector('[data-ght-source], [data-ght-clone]'));
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
   } finally { await page.close(); }
 });
 

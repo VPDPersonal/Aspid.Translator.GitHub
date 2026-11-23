@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Интерфейс Aspid Translator — до и после</title>
+  <style>
+    :root { color-scheme: light dark; font: 15px/1.5 var(--font-sans, system-ui, sans-serif); color: var(--foreground, CanvasText); }
+    body { margin: 0; }
+    main { max-width: 1280px; margin: auto; }
+    form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+    select, fieldset { color: inherit; border: 1px solid var(--border, GrayText); border-radius: 7px; background: var(--card, Canvas); font: inherit; }
+    select { max-width: 100%; padding: 6px 10px; }
+    fieldset { margin: 0; padding: 2px; display: flex; gap: 2px; }
+    label { position: relative; cursor: pointer; }
+    label span { display: block; border-radius: 4px; padding: 3px 12px; }
+    label input { position: absolute; opacity: 0; }
+    input:checked + span { background: var(--foreground, CanvasText); color: var(--background, Canvas); }
+    input:focus-visible + span { outline: 2px solid var(--ring, Highlight); outline-offset: 2px; }
+    figure { margin: 0; }
+    img { display: block; max-width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--border, GrayText); border-radius: 8px; box-sizing: border-box; }
+    img[data-scene="phone"] { max-height: 690px; width: auto; }
+    figcaption { margin-top: 8px; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+<main>
+  <form aria-label="Сравнение интерфейса">
+    <select id="scene" aria-label="Экран">
+      <option value="settings">Настройки</option>
+      <option value="github">Pull request</option>
+      <option value="readme">README</option>
+      <option value="phone">Узкий экран</option>
+      <option value="dark">Тёмная тема</option>
+    </select>
+    <fieldset aria-label="Версия интерфейса">
+      <label><input type="radio" name="version" value="before"><span>До</span></label>
+      <label><input type="radio" name="version" value="after" checked><span>После</span></label>
+    </fieldset>
+  </form>
+  <figure>
+    <img data-scene="settings" data-version="before" src="settings-before.png" alt="Настройки. До изменений" width="1280" height="840" hidden>
+    <img data-scene="settings" data-version="after" src="settings-after.png" alt="Настройки. После изменений" width="1280" height="840">
+    <img data-scene="github" data-version="before" src="github-before.png" alt="Pull request. До изменений" width="1280" height="840" hidden>
+    <img data-scene="github" data-version="after" src="github-after.png" alt="Pull request. После изменений" width="1280" height="840" hidden>
+    <img data-scene="readme" data-version="before" src="readme-before.png" alt="README. До изменений" width="1280" height="840" hidden>
+    <img data-scene="readme" data-version="after" src="readme-after.png" alt="README. После изменений" width="1280" height="840" hidden>
+    <img data-scene="phone" data-version="before" src="phone-before.png" alt="Узкий экран. До изменений" width="375" height="812" hidden>
+    <img data-scene="phone" data-version="after" src="phone-after.png" alt="Узкий экран. После изменений" width="375" height="812" hidden>
+    <img data-scene="dark" data-version="before" src="dark-before.png" alt="Тёмная тема. До изменений" width="1280" height="840" hidden>
+    <img data-scene="dark" data-version="after" src="dark-after.png" alt="Тёмная тема. После изменений" width="1280" height="840" hidden>
+    <figcaption>
+    <span data-caption="settings">Язык, автоперевод и сервис видны рядом с пятью разделами. Числа у раздела показывают, сколько переключателей включено.</span>
+    <span data-caption="github" hidden>Внизу комментария справа — его переключатель. Зелёная кнопка в углу окна действует на всю страницу.</span>
+    <span data-caption="readme" hidden>Переключатель одного документа находится в панели README рядом с оглавлением.</span>
+    <span data-caption="phone" hidden>Настройки при ширине 375 пикселей. Поле языка занимает всю доступную ширину.</span>
+    <span data-caption="dark" hidden>Те же настройки в системной тёмной теме Chrome.</span>
+    </figcaption>
+  </figure>
+</main>
+<script>
+  const form = document.querySelector('form');
+  function showSelection() {
+    const scene = document.getElementById('scene').value;
+    const version = form.elements.version.value;
+    for (const image of document.querySelectorAll('img')) {
+      image.hidden = image.dataset.scene !== scene || image.dataset.version !== version;
+    }
+    for (const caption of document.querySelectorAll('[data-caption]')) {
+      caption.hidden = caption.dataset.caption !== scene;
+    }
+  }
+  form.addEventListener('change', showSelection);
+  showSelection();
+</script>
+</body>
+</html>
