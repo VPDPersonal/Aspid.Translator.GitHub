@@ -89,6 +89,12 @@ test('the packaged extension translates a GitHub page and applies saved options 
     const settings = await browser.newPage();
     await settings.goto(`chrome-extension://${id}/options.html`);
     await settings.waitForSelector('#form:not([inert])');
+    const shortcut = await settings.evaluate(async () => {
+      const commands = await chrome.commands.getAll();
+      return commands.find(command => command.name === 'toggle-translation')?.shortcut;
+    });
+    assert.match(shortcut, /J/i);
+    assert.equal(await settings.$eval('#shortcut', el => el.textContent), shortcut);
     await settings.evaluate(() => chrome.storage.local.set({
       settings: { target: 'invalid-target', auto: 'false', parts: { prTitle: false, comments: 'false' } },
     }));
@@ -98,6 +104,11 @@ test('the packaged extension translates a GitHub page and applies saved options 
       document.querySelector('#target').selectedIndex >= 0, document.querySelector('#auto').checked,
       document.querySelector('[data-part="prTitle"]').checked, document.querySelector('[data-part="comments"]').checked,
     ]), [true, true, false, true]);
+    const commitGroup = 'details:has([data-part="commitTitles"])';
+    await settings.focus(commitGroup + ' summary');
+    await settings.keyboard.press('Enter');
+    await settings.click('[data-part="commitTitles"]');
+    assert.equal(await settings.$eval(commitGroup + ' .group-count', el => el.textContent), '1 / 2');
     await settings.select('#target', 'ar');
     await settings.waitForFunction(() => document.documentElement.lang === 'ar');
     assert.equal(await settings.$eval('html', el => el.dir), 'rtl');
@@ -130,6 +141,7 @@ test('the packaged extension translates a GitHub page and applies saved options 
     await settings.waitForSelector('#form:not([inert])');
     assert.equal(await settings.$eval('#auto', el => el.checked), false);
     assert.equal(await settings.$eval('#target', el => el.value), 'ar');
+    assert.equal(await settings.$eval('[data-part="commitTitles"]', el => el.checked), false);
   } finally {
     await browser.close();
   }

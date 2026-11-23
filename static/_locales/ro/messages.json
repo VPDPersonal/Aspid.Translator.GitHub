@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Tradu automat când se deschide o pagină",
+    "message": "Tradu automat",
     "description": "Switch."
   },
   "settingsAutoHint": {
@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "traducătorul nu mai răspunde; încercați din nou",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutLabel": {
+    "message": "Traducere / original",
+    "description": "Short settings label for toggling page translation."
+  },
+  "shortcutEdit": {
+    "message": "Configurează comanda rapidă",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Tradu tot / Afișează toate originalele",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Neatribuită",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

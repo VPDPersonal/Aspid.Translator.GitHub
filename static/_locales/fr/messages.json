@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Traduire automatiquement à l’ouverture d’une page",
+    "message": "Traduire automatiquement",
     "description": "Switch."
   },
   "settingsAutoHint": {
@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "le traducteur ne répond plus ; réessayez",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutLabel": {
+    "message": "Traduction / original",
+    "description": "Short settings label for toggling page translation."
+  },
+  "shortcutEdit": {
+    "message": "Configurer le raccourci",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Tout traduire / Afficher tous les originaux",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Non attribué",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

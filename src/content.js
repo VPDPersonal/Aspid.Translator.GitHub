@@ -385,7 +385,7 @@ function updateControl(group) {
     return;
   }
   group.control ??= createControl(() => onControlClick(group));
-  const { button, icon, label } = group.control;
+  const { button, label } = group.control;
   let text, hint, status;
   if (activation) {
     status = 'activation';
@@ -419,8 +419,6 @@ function updateControl(group) {
   if (status === 'done') button.setAttribute('aria-pressed', String(group.showOriginal));
   else button.removeAttribute('aria-pressed');
   button.title = `${hint}\n${text}`;
-  const glyph = error ? '⚠' : '🌐';
-  if (icon.textContent !== glyph) icon.textContent = glyph;
   if (label.textContent !== text) label.textContent = text;
   placeControl(group);
 }
@@ -502,8 +500,7 @@ function updateFab() {
   else if (busy) text = t('fabTranslating', busy);
   else if (error) text = t('actionRetry');
   else text = t(state.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals');
-  const label = `🌐 ${text}`;
-  if (fab.textContent !== label) fab.textContent = label;
+  if (fab.textContent !== text) fab.textContent = text;
   fab.title = error && !busy ? `${error.errorText}\n${text}` : t('fabTooltip', languageName(state.settings.target), state.provider.title);
   fab.setAttribute('aria-label', text);
 }
@@ -622,6 +619,10 @@ function scheduleMaintain() {
     maintain();
   }, 250);
 }
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message === 'toggle-translation' && fab?.isConnected) onFabClick();
+});
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes.settings) return;

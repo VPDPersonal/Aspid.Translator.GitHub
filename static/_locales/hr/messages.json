@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Automatski prevedi pri otvaranju stranice",
+    "message": "Automatski prevedi",
     "description": "Switch."
   },
   "settingsAutoHint": {
@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "prevoditelj ne odgovara; pokušajte ponovno",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutLabel": {
+    "message": "Prijevod / izvornik",
+    "description": "Short settings label for toggling page translation."
+  },
+  "shortcutEdit": {
+    "message": "Postavi prečac",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Prevedi sve / Prikaži sve izvornike",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Nije dodijeljen",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

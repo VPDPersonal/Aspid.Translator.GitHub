@@ -50,6 +50,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
     window.__translationSources = [];
     window.__preparedSources = [];
     window.__cldCalls = 0;
+    chrome.runtime = { onMessage: { addListener: listener => { window.__onMessage = listener; } } };
     chrome.storage = {
       local: { get: async () => ({ settings: window.__settings }) },
       onChanged: { addListener: listener => window.__storageListeners.push(listener) },
@@ -131,7 +132,7 @@ test('comment controls sit after reactions; global actions reset local choices a
   try {
     await page.waitForSelector('#pullrequest-1 .ght-toggle[data-state="done"]');
     await settled();
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Show all originals');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Show all originals');
     assert.equal(await page.$$eval('.ght-label', els => els.length), 0);
     assert.equal(await page.$$eval('.titleWithAction .ght-toggle', els => els.length), 1);
     assert.equal(await page.$eval('#pullrequest-1 .ght-toggle', el => el.closest('form') === null && el.closest('.comment-reactions') !== null), true);
@@ -257,12 +258,25 @@ test('manual mode starts from the global button; untranslated text has no local 
   const { page, settled } = await fixture(comment('pullrequest-1', 'Already Russian'), { auto: false });
   try {
     assert.equal(await page.$$eval('.ght-toggle', els => els.length), 0);
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
     await page.click('.ght-fab');
     await settled();
     await page.waitForFunction(() => window.__requests.includes('detector.detect'));
     assert.equal(await page.$$eval('.ght-toggle', els => els.length), 0);
     assert.equal(await page.$$eval('[data-ght-clone]', els => els.length), 0);
+  } finally { await page.close(); }
+});
+
+test('the keyboard command starts manual translation and toggles the original', async () => {
+  const { page } = await fixture(comment(), { auto: false });
+  try {
+    const command = () => page.evaluate(() => window.__onMessage('toggle-translation'));
+    await command();
+    await page.waitForSelector('[data-ght-clone]', { visible: true });
+    await command();
+    await page.waitForSelector('[data-ght-clone]', { hidden: true });
+    await command();
+    await page.waitForSelector('[data-ght-clone]', { visible: true });
   } finally { await page.close(); }
 });
 
@@ -304,6 +318,23 @@ test('every supported UI locale provides both page-wide commands', async () => {
     assert.ok(table.settingsGroupRepository?.message, `${locale}: missing repository group`);
     for (const key of ['settingsGroupPages', 'partIssues', 'partLists', 'partReleases', 'partDiscussions', 'partWiki', 'partFeed']) assert.ok(table[key]?.message, `${locale}: missing ${key}`);
   }
+});
+
+test('a PR comment uses the same gap between reactions and the translation button', async () => {
+  const { page } = await fixture(comment());
+  try {
+    await page.waitForSelector('.comment-reactions .ght-toggle[data-state="done"]');
+    await page.addStyleTag({ content: '.js-pick-reaction { display: flex } .tmp-mr-1 { margin-right: 4px }' });
+    const gaps = await page.$eval('.comment-reactions', row => {
+      const form = row.querySelector('form');
+      form.className = 'js-pick-reaction';
+      form.firstElementChild.classList.add('tmp-mr-1');
+      form.insertAdjacentHTML('beforeend', '<button class="tmp-mr-1" type="button">👀 1</button>');
+      const [smile, eyes, translate] = [...row.querySelectorAll('button')].map(button => button.getBoundingClientRect());
+      return [eyes.left - smile.right, translate.left - eyes.right];
+    });
+    assert.deepEqual(gaps, [4, 4]);
+  } finally { await page.close(); }
 });
 
 test('a long reaction row wraps the translation button without overflow on narrow screens', async () => {
@@ -410,7 +441,7 @@ test('one header button switches all directory messages, independently from READ
 test('directory-only folder pages offer manual translation even when README translation is disabled', async () => {
   const { page, settled } = await fixture(directory, { path: '/owner/repo/tree/main/src', auto: false, parts: { readme: false } });
   try {
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
     await page.click('.ght-fab');
     await page.waitForSelector('#directory-header .ght-toggle[data-state="done"]');
     await settled();
@@ -1077,7 +1108,7 @@ test('auto settings start and stop translation on the current page', async () =>
       for (const listener of window.__storageListeners) listener({ settings: { newValue: window.__settings } }, 'local');
     });
     await page.waitForFunction(() => !document.querySelector('[data-ght-source], [data-ght-clone]'));
-    assert.equal(await page.$eval('.ght-fab', el => el.textContent), '🌐 Translate');
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
   } finally { await page.close(); }
 });
 

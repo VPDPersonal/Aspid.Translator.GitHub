@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "Sayfa açıldığında otomatik çevir",
+    "message": "Otomatik çevir",
     "description": "Switch."
   },
   "settingsAutoHint": {
@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "çevirmen yanıt vermiyor; tekrar deneyin",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutLabel": {
+    "message": "Çeviri / özgün metin",
+    "description": "Short settings label for toggling page translation."
+  },
+  "shortcutEdit": {
+    "message": "Kısayolu ayarla",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "Tümünü çevir / Tüm özgün metinleri göster",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "Atanmamış",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

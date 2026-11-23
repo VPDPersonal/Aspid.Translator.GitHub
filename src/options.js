@@ -6,7 +6,15 @@ import { PROVIDERS, getProvider } from './providers/index.js';
 const $ = (id) => document.getElementById(id);
 const form = $('form');
 const partSwitch = (key) => form.querySelector(`[data-part="${key}"]`);
+const autoSetting = $('auto').closest('.auto-setting');
 let hideToast;
+
+for (const event of ['pointerenter', 'focusin']) {
+  autoSetting.addEventListener(event, () => autoSetting.classList.remove('dismissed'));
+}
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') autoSetting.classList.add('dismissed');
+});
 
 function readForm() {
   return {
@@ -18,6 +26,14 @@ function readForm() {
 }
 
 function showCount() {
+  const number = new Intl.NumberFormat(uiLanguage());
+  for (const group of form.querySelectorAll('details')) {
+    const selected = group.querySelectorAll('[data-part]:checked').length;
+    const total = group.querySelectorAll('[data-part]').length;
+    const count = group.querySelector('.group-count');
+    count.textContent = `${number.format(selected)} / ${number.format(total)}`;
+    count.title = t('settingsPartsCount', selected, total);
+  }
   const on = PARTS.filter((key) => partSwitch(key).checked).length;
   $('count').textContent = t('settingsPartsCount', on, PARTS.length);
 }
@@ -77,7 +93,27 @@ async function showLanguage(target) {
   renderTargets(target);
   renderProviders(form.querySelector('input[name="provider"]:checked')?.value);
   showCount();
+  await showShortcut();
 }
+
+async function showShortcut() {
+  const commands = await chrome.commands.getAll();
+  const shortcut = commands.find(command => command.name === 'toggle-translation')?.shortcut;
+  $('shortcut').textContent = shortcut || t('shortcutUnassigned');
+  $('shortcut').dir = shortcut ? 'ltr' : 'auto';
+  const edit = $('edit-shortcut');
+  edit.title = t('shortcutEdit');
+  edit.setAttribute('aria-label', [t('shortcutLabel'), $('shortcut').textContent, edit.title].join(', '));
+}
+
+$('edit-shortcut').addEventListener('click', event => {
+  event.preventDefault();
+  chrome.tabs.create({ url: event.currentTarget.href });
+});
+window.addEventListener('focus', showShortcut);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) showShortcut();
+});
 
 async function init() {
   const settings = await loadSettings();

@@ -19,6 +19,12 @@
       "32": "icons/icon-32.png"
     }
   },
+  "commands": {
+    "toggle-translation": {
+      "suggested_key": { "default": "Alt+Shift+J" },
+      "description": "__MSG_shortcutToggle__"
+    }
+  },
   "options_ui": { "page": "options.html", "open_in_tab": true },
   "content_scripts": [
     {

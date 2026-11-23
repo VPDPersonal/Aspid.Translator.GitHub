@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "పేజీ తెరిచినప్పుడు ఆటోమేటిక్‌గా అనువదించు",
+    "message": "ఆటోమేటిక్‌గా అనువదించు",
     "description": "Switch."
   },
   "settingsAutoHint": {
@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "అనువాదకం స్పందించడం లేదు; మళ్లీ ప్రయత్నించండి",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutLabel": {
+    "message": "అనువాదం / మూలం",
+    "description": "Short settings label for toggling page translation."
+  },
+  "shortcutEdit": {
+    "message": "సత్వరమార్గాన్ని సెట్ చేయండి",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "అన్నింటినీ అనువదించు / అన్ని అసలు పాఠాలను చూపించు",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "కేటాయించలేదు",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

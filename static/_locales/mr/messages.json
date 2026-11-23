@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "पेज उघडल्यावर आपोआप अनुवाद करा",
+    "message": "आपोआप अनुवाद करा",
     "description": "Switch."
   },
   "settingsAutoHint": {
@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "भाषांतरक प्रतिसाद देत नाही; पुन्हा प्रयत्न करा",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutLabel": {
+    "message": "भाषांतर / मूळ मजकूर",
+    "description": "Short settings label for toggling page translation."
+  },
+  "shortcutEdit": {
+    "message": "शॉर्टकट सेट करा",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "सर्व भाषांतरित करा / सर्व मूळ मजकूर दाखवा",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "सेट केलेले नाही",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }

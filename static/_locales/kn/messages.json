@@ -20,7 +20,7 @@
     "description": "Target language picker."
   },
   "settingsAuto": {
-    "message": "ಪುಟ ತೆರೆದಾಗ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಅನುವಾದಿಸಿ",
+    "message": "ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಅನುವಾದಿಸಿ",
     "description": "Switch."
   },
   "settingsAutoHint": {
@@ -292,5 +292,21 @@
   "errorTimeout": {
     "message": "ಅನುವಾದಕ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ; ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
     "description": "Error text after \"Translation failed:\" when a bridge request stops responding."
+  },
+  "shortcutLabel": {
+    "message": "ಅನುವಾದ / ಮೂಲ",
+    "description": "Short settings label for toggling page translation."
+  },
+  "shortcutEdit": {
+    "message": "ಶಾರ್ಟ್‌ಕಟ್ ಹೊಂದಿಸಿ",
+    "description": "Open Chrome extension shortcut settings."
+  },
+  "shortcutToggle": {
+    "message": "ಎಲ್ಲವನ್ನೂ ಅನುವಾದಿಸಿ / ಎಲ್ಲಾ ಮೂಲ ಪಠ್ಯಗಳನ್ನು ತೋರಿಸಿ",
+    "description": "Toggle page translation and original text."
+  },
+  "shortcutUnassigned": {
+    "message": "ಹೊಂದಿಸಿಲ್ಲ",
+    "description": "No keyboard shortcut is currently assigned in Chrome."
   }
 }
