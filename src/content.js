@@ -493,27 +493,13 @@ function updateFab() {
   if (!fab) return;
   const busy = state.queue.length + state.running;
   const error = pageErrors()[0];
-  let text, status;
-  if (state.preparingModels || state.downloadProgress !== null) {
-    status = 'loading';
-    text = t('fabDownloading', Math.round((state.downloadProgress ?? 0) * 100));
-  } else if (!state.active) {
-    status = 'idle';
-    text = t('fabTranslate');
-  } else if (activationJob()) {
-    status = 'activation';
-    text = t('fabDownloadModel');
-  } else if (busy) {
-    status = 'loading';
-    text = t('fabTranslating', busy);
-  } else if (error) {
-    status = 'error';
-    text = t('actionRetry');
-  } else {
-    status = 'done';
-    text = t(state.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals');
-  }
-  fab.dataset.state = status;
+  let text;
+  if (state.preparingModels || state.downloadProgress !== null) text = t('fabDownloading', Math.round((state.downloadProgress ?? 0) * 100));
+  else if (!state.active) text = t('fabTranslate');
+  else if (activationJob()) text = t('fabDownloadModel');
+  else if (busy) text = t('fabTranslating', busy);
+  else if (error) text = t('actionRetry');
+  else text = t(state.showOriginal ? 'fabTranslateAll' : 'fabShowOriginals');
   if (fab.textContent !== text) fab.textContent = text;
   fab.title = error && !busy ? `${error.errorText}\n${text}` : t('fabTooltip', languageName(state.settings.target), state.provider.title);
   fab.setAttribute('aria-label', text);

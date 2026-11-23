@@ -237,7 +237,6 @@ export function placeControl(group) {
   if (!target?.parent?.isConnected) return;
   const { slot, button } = group.control;
   slot.classList.toggle('ght-control-footer', Boolean(target.footer));
-  slot.classList.toggle('ght-control-comment', group.kind === 'comment');
   slot.classList.toggle('ght-control-document', group.kind === 'document');
   slot.classList.toggle('ght-control-title', group.kind === 'title');
   slot.classList.toggle('ght-control-title-inline', Boolean(target.inlineTitle));
