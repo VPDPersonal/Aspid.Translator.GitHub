@@ -1,14 +1,18 @@
 {
   "extName": {
-    "message": "Aspid Translator for GitHub",
+    "message": "Aspid.Translator.GitHub",
     "description": "Extension name."
   },
   "extDescription": {
     "message": "Tłumaczy pull requesty, commity i pliki README na GitHubie na miejscu, na Twoim urządzeniu, wbudowanym tłumaczem Chrome.",
     "description": "Web Store and chrome://extensions description, 132 characters max."
   },
+  "settingsTagline": {
+    "message": "Tłumaczenie bezpośrednio na GitHubie",
+    "description": "Short tagline under the settings banner title."
+  },
   "settingsTitle": {
-    "message": "Aspid Translator for GitHub – ustawienia",
+    "message": "Aspid.Translator.GitHub – ustawienia",
     "description": "Toolbar button tooltip and settings page title."
   },
   "settingsTranslation": {

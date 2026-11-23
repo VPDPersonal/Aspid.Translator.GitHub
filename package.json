@@ -1,9 +1,9 @@
 {
-  "name": "asp-github-translator",
+  "name": "asp-translator-github",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Aspid Translator for GitHub: Chrome extension that translates pull requests, commits and READMEs on GitHub.",
+  "description": "Aspid.Translator.GitHub: Chrome extension that translates pull requests, commits and READMEs on GitHub.",
   "license": "MIT",
   "scripts": {
     "test": "node --test tests/*.test.mjs",

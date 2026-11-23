@@ -1,4 +1,4 @@
-# asp-pr rules for GitHubTranslator
+# asp-pr rules for Aspid.Translator.GitHub
 
 ## Scopes
 

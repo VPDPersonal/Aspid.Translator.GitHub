@@ -13,8 +13,8 @@ let files, options;
 before(async () => {
   const root = new URL('../', import.meta.url);
   await promisify(execFile)(process.execPath, ['build.mjs', '--zip'], { cwd: root });
-  const { version } = JSON.parse(await readFile(new URL('package.json', root), 'utf8'));
-  files = unzipSync(await readFile(new URL(`release/aspid-github-translator-${version}.zip`, root)));
+  const { name, version } = JSON.parse(await readFile(new URL('package.json', root), 'utf8'));
+  files = unzipSync(await readFile(new URL(`release/${name}-${version}.zip`, root)));
   options = { version, locales: await sourceLocales() };
 });
 const encoded = value => new TextEncoder().encode(JSON.stringify(value));

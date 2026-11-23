@@ -1,14 +1,18 @@
 {
   "extName": {
-    "message": "Aspid Translator for GitHub",
+    "message": "Aspid.Translator.GitHub",
     "description": "Extension name."
   },
   "extDescription": {
     "message": "GitHub의 풀 리퀘스트, 커밋, README를 페이지에서 바로 번역합니다. Chrome 내장 번역기로 기기에서 처리합니다.",
     "description": "Web Store and chrome://extensions description, 132 characters max."
   },
+  "settingsTagline": {
+    "message": "GitHub에서 바로 번역",
+    "description": "Short tagline under the settings banner title."
+  },
   "settingsTitle": {
-    "message": "Aspid Translator for GitHub 설정",
+    "message": "Aspid.Translator.GitHub 설정",
     "description": "Toolbar button tooltip and settings page title."
   },
   "settingsTranslation": {

@@ -1,14 +1,18 @@
 {
   "extName": {
-    "message": "Aspid Translator for GitHub",
+    "message": "Aspid.Translator.GitHub",
     "description": "Extension name."
   },
   "extDescription": {
     "message": "GitHub पर पुल रिक्वेस्ट, कमिट और README को उसी पेज पर, आपके डिवाइस पर Chrome के बिल्ट-इन अनुवादक से अनुवाद करता है।",
     "description": "Web Store and chrome://extensions description, 132 characters max."
   },
+  "settingsTagline": {
+    "message": "GitHub पर सीधे अनुवाद",
+    "description": "Short tagline under the settings banner title."
+  },
   "settingsTitle": {
-    "message": "Aspid Translator for GitHub सेटिंग",
+    "message": "Aspid.Translator.GitHub सेटिंग",
     "description": "Toolbar button tooltip and settings page title."
   },
   "settingsTranslation": {

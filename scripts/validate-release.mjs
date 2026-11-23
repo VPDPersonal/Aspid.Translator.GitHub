@@ -19,7 +19,7 @@ export function validateRelease(files, { version, locales }) {
   };
   const json = path => JSON.parse(text(required(path)));
   for (const path of Object.keys(files)) {
-    assert.match(path, /^(?:manifest\.json|LICENSE|(?:background|bridge|content|options)\.js|content\.css|options\.html|icons\/icon(?:-(?:16|32|48|128)\.png|\.svg)|fonts\/[\w.-]+\.(?:woff2|css|txt)|_locales\/[\w]+\/messages\.json)$/, `Unexpected packaged file: ${path}`);
+    assert.match(path, /^(?:manifest\.json|LICENSE|(?:background|bridge|content|options)\.js|content\.css|options\.html|icons\/(?:icon-(?:16|32|48|128)\.png|banner-logo\.svg)|fonts\/[\w.-]+\.(?:woff2|css|txt)|_locales\/[\w]+\/messages\.json)$/, `Unexpected packaged file: ${path}`);
   }
   const manifest = json('manifest.json');
   assert.equal(manifest.manifest_version, 3, 'Only Manifest V3 packages are supported');
@@ -52,7 +52,7 @@ export function validateRelease(files, { version, locales }) {
     assert.equal(bytes.readUInt32BE(20), Number(size), `Wrong icon height: ${path}`);
   }
   for (const path of Object.values(manifest.action.default_icon)) required(path);
-  required('icons/icon.svg');
+  required('icons/banner-logo.svg');
   required('fonts/fonts.css');
   for (const [, path] of text(files['fonts/fonts.css']).matchAll(/url\(['"]?([^)'"\s]+)['"]?\)/g)) required(`fonts/${path}`);
   for (const family of ['sans', 'serif', 'mono']) required(`fonts/ibm-plex-${family}-LICENSE.txt`);
@@ -84,8 +84,8 @@ export function validateRelease(files, { version, locales }) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
-  const archive = process.argv[2] ?? `release/aspid-github-translator-${version}.zip`;
+  const { name, version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const archive = process.argv[2] ?? `release/${name}-${version}.zip`;
   const locales = await sourceLocales();
   const result = validateRelease(unzipSync(await readFile(archive)), { version, locales });
   console.log(`Validated ${archive}: version ${result.version}, ${result.files} files, ${result.locales} locales`);

@@ -83,7 +83,7 @@ async function renderIcons() {
     const padded = source.replace(/viewBox="[^"]*"/, `viewBox="${-pad} ${-pad} ${art + 2 * pad} ${art + 2 * pad}"`);
     await writeFile(`dist/icons/icon-${size}.png`, renderSupersampled(padded, Number(size)));
   }
-  await cp('assets/icon.svg', 'dist/icons/icon.svg'); // the settings page header
+  await cp('assets/banner-logo.svg', 'dist/icons/banner-logo.svg');
 }
 
 // IBM Plex (OFL 1.1) for the settings page, copied from the pinned @fontsource packages: only the faces
@@ -94,7 +94,7 @@ async function renderIcons() {
 // the --sans/--serif/--mono stacks of options.html.
 const FONTS = [
   { family: 'IBM Plex Sans', pkg: 'ibm-plex-sans', weights: [400, 500, 600], subsets: ['cyrillic', 'greek', 'vietnamese', 'latin-ext', 'latin'] },
-  { family: 'IBM Plex Serif', pkg: 'ibm-plex-serif', weights: [600], subsets: ['cyrillic', 'vietnamese', 'latin-ext', 'latin'] },
+  { family: 'IBM Plex Serif', pkg: 'ibm-plex-serif', weights: [500, 600], subsets: ['cyrillic', 'vietnamese', 'latin-ext', 'latin'] },
   { family: 'IBM Plex Mono', pkg: 'ibm-plex-mono', weights: [400], subsets: ['cyrillic', 'vietnamese', 'latin-ext', 'latin'] },
 ];
 // From the packages' <subset>-<weight>.css, the same for every family and weight. The ranges overlap
@@ -145,7 +145,7 @@ async function writeZip() {
     files[relative('dist', path).split(sep).join('/')] = await readFile(path);
   }
   validateRelease(files, { version: pkg.version, locales: await sourceLocales() });
-  const name = `release/aspid-github-translator-${pkg.version}.zip`;
+  const name = `release/${pkg.name}-${pkg.version}.zip`;
   await mkdir('release', { recursive: true });
   // ZIP stores local calendar fields, so use the same representable date in every time zone.
   await writeFile(name, zipSync(files, { level: 9, mtime: new Date(1980, 0, 1) }));
