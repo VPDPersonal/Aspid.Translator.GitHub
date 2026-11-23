@@ -3,6 +3,14 @@
 
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
+chrome.runtime.onMessage.addListener((message, _sender, reply) => {
+  if (message !== 'get-translation-shortcut') return;
+  chrome.commands.getAll().then(commands => {
+    reply(commands.find(command => command.name === 'toggle-translation')?.shortcut ?? '');
+  }, () => reply(''));
+  return true;
+});
+
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command !== 'toggle-translation' || tab?.id == null) return;
   // Only supported GitHub tabs have a content script listening.
