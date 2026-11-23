@@ -5,23 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="icons/icon-32.png">
   <link rel="stylesheet" href="fonts/fonts.css">
-  <title>Aspid Translator for GitHub</title>
+  <title>Aspid.Translator.GitHub</title>
   <style>
-    /* The Aspid "Venom" theme of the Aspid sites, with its default green accent. */
+    /* The FastTools Venom palette with its default green accent. */
     :root {
       color-scheme: light dark;
-      --bg: #f7f7f8; --panel: #ffffff; --hair: #e3e4e8; --line: #d3d5db;
-      --fg: #2a2c31; --strong: #121316; --muted: #5f636b;
-      --accent: #1d8840; --fill: #1d8840; --ink: #ffffff; --deep: #177035;
+      --bg: #f7f7f8; --panel: #ffffff; --canvas: #e6e7eb; --hair: #e3e4e8; --line: #d3d5db;
+      --fg: #2a2c31; --strong: #121316; --muted: #5a5e66;
+      --accent: #1d8840; --ink: #ffffff; --deep: #177035;
+      --glow-soft: rgb(34 160 75 / 0.11); --spark: #1d8840;
       --shadow: 0 18px 48px -16px rgb(18 19 22 / 0.3);
       --serif: 'IBM Plex Serif', ui-serif, Georgia, serif;
       --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0a0b0f; --panel: #10121a; --hair: #1c1f28; --line: #272b35;
+        --bg: #0a0b0f; --panel: #10121a; --canvas: #06080b; --hair: #1c1f28; --line: #272b35;
         --fg: #c8c8cc; --strong: #f0f0f2; --muted: #92959f;
-        --accent: #5cb46b; --fill: #5cb46b; --ink: #06140a; --deep: #357a42;
+        --accent: #5cb46b; --ink: #06140a; --deep: #357a42;
+        --glow-soft: rgb(92 180 107 / 0.1); --spark: #7ed38e;
         --shadow: 0 18px 48px -16px rgb(0 0 0 / 0.7);
       }
     }
@@ -30,17 +32,55 @@
       margin: 0; background: var(--bg); color: var(--fg);
       font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased;
     }
-    main { max-width: 1088px; margin: 0 auto; padding: 48px 32px 80px; }
-    header {
-      display: flex; align-items: center; gap: 18px; padding-bottom: 28px;
-      border-bottom: 1px solid var(--line); margin-bottom: 32px;
+    .banner {
+      --dot-step: clamp(18px, 2.25vw, 30px);
+      --dot-origin: center calc(100% + var(--dot-step) / 2 - 5px);
+      position: relative; isolation: isolate; overflow: clip;
+      border-bottom: 1px solid var(--line);
+      background: var(--canvas)
+        radial-gradient(circle, color-mix(in srgb, var(--muted) 18%, transparent) 1.1px, transparent 1.5px)
+        var(--dot-origin) / var(--dot-step) var(--dot-step);
     }
-    header img { flex: none; }
+    .banner::before, .banner-sparks { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+    .banner::before {
+      content: '';
+      background: radial-gradient(circle, color-mix(in srgb, var(--accent) 78%, transparent) 1.75px, transparent 2.35px)
+        var(--dot-origin) / var(--dot-step) var(--dot-step);
+      mask-image: linear-gradient(to top, #000, transparent calc(2 * var(--dot-step)));
+    }
+    .banner-sparks span {
+      position: absolute; left: var(--x); top: var(--y); width: 18px; height: 18px; translate: -50% -50%;
+      opacity: .55;
+      background: radial-gradient(circle, var(--spark) 1.35px, color-mix(in srgb, var(--accent) 34%, transparent) 1.8px, transparent 8px);
+    }
+    .banner-sparks span:nth-child(1) { --x: 9%; --y: 61%; --delay: -2s; }
+    .banner-sparks span:nth-child(2) { --x: 24%; --y: 25%; --delay: -5s; }
+    .banner-sparks span:nth-child(3) { --x: 36%; --y: 79%; --delay: -3.5s; }
+    .banner-sparks span:nth-child(4) { --x: 61%; --y: 18%; --delay: -6s; }
+    .banner-sparks span:nth-child(5) { --x: 77%; --y: 73%; --delay: -2.75s; }
+    .banner-sparks span:nth-child(6) { --x: 93%; --y: 38%; --delay: -4.25s; }
+    @media (prefers-reduced-motion: no-preference) {
+      .banner::before { animation: banner-glow 7.8s ease-in-out infinite; }
+      .banner-sparks span { animation: banner-spark 9s ease-in-out var(--delay) infinite; }
+    }
+    @keyframes banner-glow { 50% { opacity: .6; } }
+    @keyframes banner-spark {
+      from { opacity: 0; transform: translate(-5px, 35px); }
+      40%, 60% { opacity: .65; }
+      to { opacity: 0; transform: translate(7px, -55px); }
+    }
+    .banner-content, form { max-width: 1088px; margin-inline: auto; padding-inline: 32px; }
+    .banner-content { display: flex; align-items: center; gap: clamp(24px, 4vw, 48px); padding-block: 36px; }
+    .banner-logo { flex: none; width: clamp(112px, 16vw, 176px); height: auto; }
+    .banner-text { min-width: 0; }
     h1, h2, p { margin: 0; }
-    h1 { font: 600 clamp(24px, 3vw, 36px)/1.18 var(--serif); letter-spacing: -0.035em; color: var(--strong); }
+    h1 {
+      font: 500 clamp(36px, 5.4vw, 60px)/1.05 var(--serif); letter-spacing: -0.02em;
+      color: var(--strong); text-wrap: balance;
+    }
     h1 .brand { color: var(--accent); }
-    .tagline { max-width: 72ch; margin-top: 6px; color: var(--muted); text-wrap: pretty; }
-    form { display: grid; grid-template-columns: minmax(0, .73fr) minmax(0, 1.27fr); align-items: start; gap: 36px; }
+    .tagline { max-width: 60ch; margin-top: 12px; color: var(--fg); font-size: clamp(18px, 2vw, 22px); font-weight: 500; text-wrap: pretty; }
+    form { display: grid; grid-template-columns: minmax(0, .73fr) minmax(0, 1.27fr); align-items: start; gap: 36px; padding-block: 32px 80px; }
     .general, section { display: grid; min-width: 0; gap: 14px; }
     .general { gap: 26px; }
     .shortcut { flex-wrap: wrap; }
@@ -62,12 +102,15 @@
     summary::-webkit-details-marker { display: none; }
     summary::after { content: ''; width: 7px; height: 7px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); margin: -3px 3px 0; }
     details[open] > summary::after { transform: rotate(225deg); margin-top: 3px; }
-    summary .icon { box-sizing: content-box; padding: 7px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 9%, var(--panel)); }
+    summary .icon { box-sizing: content-box; padding: 7px; border-radius: 8px; background: var(--glow-soft); }
     .icon { flex: none; color: var(--accent); }
     .row { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 44px; min-width: 0; padding: 8px 12px; }
     label.row { cursor: pointer; border-radius: 7px; }
     label.row:hover, summary:hover { background: color-mix(in srgb, var(--fg) 4%, transparent); }
-    .group-body .row + .row { border-top: 1px solid var(--hair); }
+    .group-body .row + .row, .provider + .provider { position: relative; }
+    .group-body .row + .row::before, .provider + .provider::before {
+      content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: var(--hair); pointer-events: none;
+    }
     .general .row { padding: 16px 18px; }
     .general .row:has(select) { display: grid; gap: 8px; font-weight: 600; }
     .divider { height: 1px; margin-inline: 18px; background: var(--hair); }
@@ -89,11 +132,12 @@
       background: var(--bg); color: var(--strong); font: 500 15px var(--sans); cursor: pointer;
     }
     @media (max-width: 740px) {
-      main { max-width: 600px; padding: 28px 16px 72px; }
-      header { align-items: start; gap: 12px; margin-bottom: 24px; padding-bottom: 20px; }
-      header img { width: 42px; height: 42px; }
-      .tagline { font-size: 13px; }
-      form { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+      .banner-content, form { max-width: 600px; padding-inline: 16px; }
+      .banner-content { flex-direction: column; gap: 14px; padding-block: 28px; text-align: center; }
+      .banner-logo { width: 88px; }
+      h1 { font-size: clamp(28px, 6vw, 40px); }
+      .tagline { margin-inline: auto; }
+      form { grid-template-columns: minmax(0, 1fr); gap: 22px; padding-block: 24px 72px; }
       .general { gap: 18px; }
       section { gap: 9px; }
     }
@@ -107,11 +151,10 @@
       content: ''; position: absolute; top: 3.5px; inset-inline-start: 3.5px; width: 14px; height: 14px; border-radius: 50%;
       background: var(--muted); transition: transform 0.15s, background-color 0.15s;
     }
-    .switch:checked { border-color: var(--fill); background: var(--fill); }
+    .switch:checked { border-color: var(--accent); background: var(--accent); }
     .switch:checked::before { background: var(--ink); transform: translateX(18px); }
     .switch:checked:dir(rtl)::before { transform: translateX(-18px); }
     .provider { flex-wrap: nowrap; justify-content: flex-start; gap: 12px; padding: 16px; }
-    .provider + .provider { border-top: 1px solid var(--hair); }
     .provider input { margin: 0; accent-color: var(--accent); }
     .provider:has(input[hidden]) { cursor: default; }
     .provider:has(input[hidden]):hover { background: none; }
@@ -120,7 +163,7 @@
     .toast {
       position: fixed; left: 50%; bottom: 24px; display: flex; align-items: center; gap: 10px;
       box-sizing: border-box; max-width: calc(100% - 32px); padding: 12px 16px;
-      border: 1px solid var(--deep); border-radius: 10px; background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+      border: 1px solid var(--deep); border-radius: 10px; background: linear-gradient(var(--glow-soft), var(--glow-soft)) var(--panel);
       color: var(--strong); box-shadow: var(--shadow); font-size: 14px;
       translate: -50% 12px; opacity: 0; pointer-events: none; transition: opacity 0.2s, translate 0.2s;
     }
@@ -132,12 +175,16 @@
 </head>
 <body>
 <main>
-  <header>
-    <img src="icons/icon.svg" alt="" width="54" height="54">
-    <div>
-      <!-- The name is the same in every language; "Aspid" carries the accent, as on the Aspid sites. -->
-      <h1><span class="brand">Aspid</span> Translator for GitHub</h1>
-      <p class="tagline" data-i18n="extDescription"></p>
+  <header class="banner">
+    <div class="banner-sparks" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="banner-content">
+      <img class="banner-logo" src="icons/banner-logo.svg" alt="" width="176" height="176">
+      <div class="banner-text">
+        <h1><bdi lang="en" dir="ltr"><span class="brand">Aspid.</span><wbr>Translator.<wbr>GitHub</bdi></h1>
+        <p class="tagline" data-i18n="settingsTagline"></p>
+      </div>
     </div>
   </header>
 

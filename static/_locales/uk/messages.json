@@ -1,14 +1,18 @@
 {
   "extName": {
-    "message": "Aspid Translator for GitHub",
+    "message": "Aspid.Translator.GitHub",
     "description": "Extension name."
   },
   "extDescription": {
     "message": "Перекладає пул-реквести, коміти й README на GitHub просто на сторінці, на вашому пристрої вбудованим перекладачем Chrome.",
     "description": "Web Store and chrome://extensions description, 132 characters max."
   },
+  "settingsTagline": {
+    "message": "Переклад прямо на GitHub",
+    "description": "Short tagline under the settings banner title."
+  },
   "settingsTitle": {
-    "message": "Aspid Translator for GitHub: налаштування",
+    "message": "Aspid.Translator.GitHub: налаштування",
     "description": "Toolbar button tooltip and settings page title."
   },
   "settingsTranslation": {

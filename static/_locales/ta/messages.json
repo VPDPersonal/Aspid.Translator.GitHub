@@ -1,14 +1,18 @@
 {
   "extName": {
-    "message": "Aspid Translator for GitHub",
+    "message": "Aspid.Translator.GitHub",
     "description": "Extension name."
   },
   "extDescription": {
     "message": "GitHub-இல் புல் ரிக்வெஸ்ட், கமிட், README-களை அதே பக்கத்தில், உங்கள் சாதனத்திலேயே Chrome மொழிபெயர்ப்பாளரால் மொழிபெயர்க்கிறது.",
     "description": "Web Store and chrome://extensions description, 132 characters max."
   },
+  "settingsTagline": {
+    "message": "GitHub பக்கத்திலேயே மொழிபெயர்ப்பு",
+    "description": "Short tagline under the settings banner title."
+  },
   "settingsTitle": {
-    "message": "Aspid Translator for GitHub அமைப்புகள்",
+    "message": "Aspid.Translator.GitHub அமைப்புகள்",
     "description": "Toolbar button tooltip and settings page title."
   },
   "settingsTranslation": {
