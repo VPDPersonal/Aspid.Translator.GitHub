@@ -65,10 +65,24 @@
   align-items: center;
 }
 
-:is(h2, h2 *):has(> .ght-control-about) {
+h2:has(> .ght-control-about),
+.js-details-container :has(> .ght-control-commit-hash) {
   display: flex;
   align-items: center;
-  gap: var(--base-size-4, 4px);
+}
+
+.ght-control-about {
+  margin-inline-start: auto;
+}
+
+.ght-control-about:has(+ :is(button, a)),
+.ght-control-readme,
+.js-discussions-title-container .ght-control-action:has(+ *) {
+  margin-inline-end: var(--base-size-8, 8px);
+}
+
+.ght-control-commit-hash {
+  margin-inline-end: 0;
 }
 
 .ght-control-title-standalone {
@@ -174,6 +188,37 @@
 
 .ght-control-icon .ght-toggle:hover:enabled {
   background: var(--control-transparent-bgColor-hover, var(--bgColor-muted, #f6f8fa));
+}
+
+.ght-control-readme .ght-toggle {
+  /* Match the Outline button's icon, padding, and transparent border. */
+  width: calc(16px + 2 * var(--base-size-8, 8px) + 2 * var(--borderWidth-thin, 1px));
+}
+
+.ght-control-action .ght-toggle {
+  width: var(--control-medium-size, 32px);
+  min-height: var(--control-medium-size, 32px);
+  border: 1px solid var(--button-default-borderColor-rest, var(--borderColor-default, #d1d9e0));
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--button-default-bgColor-rest, var(--bgColor-muted, #f6f8fa));
+  box-shadow: var(--button-default-shadow-resting, none);
+}
+
+.ght-control-action .ght-toggle:hover:enabled {
+  border-color: var(--button-default-borderColor-hover, var(--borderColor-default, #d1d9e0));
+  background: var(--button-default-bgColor-hover, var(--bgColor-muted, #f6f8fa));
+}
+
+.ght-control-reaction .ght-toggle {
+  width: 26px;
+  min-height: 26px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 50%;
+  background: var(--bgColor-muted, #f6f8fa);
+}
+
+.ght-control-reaction .ght-toggle:hover:enabled {
+  background: var(--control-transparent-bgColor-hover, var(--bgColor-neutral-muted, #eff2f5));
 }
 
 .ght-toggle:focus-visible,
