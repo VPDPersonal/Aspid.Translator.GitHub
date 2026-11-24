@@ -5,23 +5,15 @@
 <link rel="stylesheet" href="promo.css">
 <style>
   .shot {
+    --dot-origin: center top;
+    --signal-y: calc(var(--dot-step) * 3.5);
+    --signal-height: 56px;
     height: 100vh;
     padding: 26px 80px 0;
     text-align: center;
   }
   h1 { font-size: 43px; }
   p { margin-top: 8px; font-size: 21px; }
-  .shot::after {
-    content: "";
-    position: absolute;
-    top: calc(var(--window-top) - 7px);
-    left: 50%;
-    width: var(--window-width);
-    height: 1px;
-    translate: -50% 0;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: .55;
-  }
   img {
     position: absolute;
     top: var(--window-top);

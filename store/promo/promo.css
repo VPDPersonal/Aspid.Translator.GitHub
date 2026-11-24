@@ -22,19 +22,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* The FastTools banner grid with a soft green glow behind the artwork. */
+/* The FastTools grid, with brighter dots forming a signal across it. */
 .bg {
-  --dot-step: 40px;
-  --dot-size: 2px;
-  --glow-origin: 20% 84%;
+  --dot-step: 28px;
+  --dot-size: 1.5px;
+  --dot-origin: center bottom;
+  --signal-y: calc(100% - var(--dot-step) * 2.5);
+  --signal-height: 90px;
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background:
+  background: var(--canvas)
     radial-gradient(circle, rgb(146 149 159 / .18) var(--dot-size), transparent calc(var(--dot-size) + .35px))
-      center / var(--dot-step) var(--dot-step),
-    radial-gradient(ellipse at var(--glow-origin), rgb(92 180 107 / .17), transparent 57%),
-    var(--canvas);
+    var(--dot-origin) / var(--dot-step) var(--dot-step);
 }
 
 .bg::before {
@@ -42,9 +42,16 @@ body {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(circle, rgb(92 180 107 / .55) var(--dot-size), transparent calc(var(--dot-size) + .8px))
-    center / var(--dot-step) var(--dot-step);
-  mask-image: linear-gradient(to top, #000, transparent calc(3 * var(--dot-step)));
+  background: radial-gradient(circle, rgb(92 180 107 / .7) var(--dot-size), transparent calc(var(--dot-size) + .55px))
+    var(--dot-origin) / var(--dot-step) var(--dot-step);
+  mask-image:
+    radial-gradient(ellipse 49% 10px at 50% var(--signal-y), rgb(0 0 0 / .48), transparent),
+    radial-gradient(ellipse 8% calc(var(--signal-height) * .55) at 15% var(--signal-y), #000 18%, transparent),
+    radial-gradient(ellipse 8% calc(var(--signal-height) * .85) at 29% var(--signal-y), #000 36%, transparent),
+    radial-gradient(ellipse 8% calc(var(--signal-height) * .45) at 43% var(--signal-y), #000 20%, transparent),
+    radial-gradient(ellipse 10% var(--signal-height) at 60% var(--signal-y), #000 42%, transparent),
+    radial-gradient(ellipse 8% calc(var(--signal-height) * .55) at 76% var(--signal-y), #000 22%, transparent),
+    radial-gradient(ellipse 7% calc(var(--signal-height) * .4) at 89% var(--signal-y), #000 18%, transparent);
   pointer-events: none;
 }
 
