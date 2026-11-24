@@ -79,13 +79,6 @@ async function renderIcons() {
   await cp(LOGO, 'dist/icons/banner-logo.svg');
 }
 
-async function embedContentIcon() {
-  // Embed the PNG so injected CSS can use it without a web-accessible resource.
-  const css = await readFile('static/content.css', 'utf8');
-  const icon = await readFile('dist/icons/icon-32.png');
-  await writeFile('dist/content.css', css.replace('icons/icon-32.png', `data:image/png;base64,${icon.toString('base64')}`));
-}
-
 // IBM Plex (OFL 1.1) for the settings page, copied from the pinned @fontsource packages: only the faces
 // the page uses, in the Latin, Latin Extended, Vietnamese and Cyrillic subsets, plus Greek for IBM Plex
 // Sans (Serif and Mono have no Greek). Each subset is its own @font-face rule with the package's
@@ -158,7 +151,6 @@ await cp('static', 'dist', { recursive: true, filter: path => basename(path) !==
 await cp('LICENSE', 'dist/LICENSE');
 await writeManifest();
 await renderIcons();
-await embedContentIcon();
 await copyFonts();
 
 const context = await esbuild.context({
