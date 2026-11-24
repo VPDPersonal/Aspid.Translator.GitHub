@@ -213,19 +213,72 @@ test('README control uses its header, restores anchors, and survives a replaced 
   } finally { await page.close(); }
 });
 
-test('file control precedes raw actions and disappears in Code or Blame without changing source', async () => {
-  const { page, settled } = await fixture('<div class="blobContainer"><header><div data-component="SegmentedControl.Button"><button id="preview" aria-pressed="true"><span data-text="Preview">Preview</span></button></div><div class="actions"><div class="react-blob-header-edit-and-raw-actions"><a>Raw</a></div></div></header><section id="preview-content"><article itemprop="text" class="markdown-body">Hello document</article></section><pre class="js-file-content" id="source" hidden>Hello source code</pre></div>', { path: '/owner/repo/blob/main/AGENTS.md' });
+test('file preview places the translation button first in the file actions and matches Raw', async () => {
+  const { page, settled } = await fixture(`
+    <style>[data-component="ButtonGroup"],.file-actions{display:inline-flex;gap:4px}
+    #raw-actions a,#raw-actions button.native{display:block;height:28px;box-sizing:border-box;border:1px solid #d1d9e0;background:#f6f8fa}
+    #raw-actions > div:first-child a{border-start-start-radius:6px;border-end-start-radius:6px}</style>
+    <div class="blobContainer"><header>
+      <button id="preview" aria-pressed="true"><span data-text="Preview">Preview</span></button>
+      <div class="file-actions"><button>Other actions</button>
+        <div class="react-blob-header-edit-and-raw-actions">
+          <div data-component="ButtonGroup" id="raw-actions">
+            <div><a data-testid="raw-button">Raw</a></div><div><button class="native">Copy</button></div>
+          </div>
+        </div>
+      </div></header>
+      <section id="preview-content"><article itemprop="text" class="markdown-body">Hello document</article></section>
+      <pre class="js-file-content" id="source" hidden>Hello source code</pre>
+    </div>`, { path: '/owner/repo/blob/main/AGENTS.md' });
   try {
-    await page.waitForSelector('.actions .ght-toggle[data-state="done"]');
+    await page.waitForSelector('.file-actions .ght-toggle[data-state="done"]');
     await settled();
-    assert.equal(await page.$eval('.actions', el => el.firstElementChild.classList.contains('ght-control-slot')), true);
-    await page.click('.actions .ght-toggle');
+    assert.deepEqual(await page.$eval('.file-actions', group => {
+      const translate = group.firstElementChild.querySelector('.ght-toggle');
+      const raw = group.querySelector('[data-testid="raw-button"]');
+      const style = getComputedStyle(translate);
+      return [
+        translate.offsetHeight === raw.offsetHeight,
+        style.backgroundColor === getComputedStyle(raw).backgroundColor,
+        style.borderStartStartRadius, style.borderStartEndRadius,
+      ];
+    }), [true, true, '6px', '6px']);
+    await page.click('.file-actions .ght-toggle');
     await page.evaluate(() => { document.querySelector('#preview').setAttribute('aria-pressed', 'false'); document.querySelector('#preview-content').hidden = true; document.querySelector('#source').hidden = false; });
     await page.waitForFunction(() => document.querySelector('.ght-control-slot').hidden);
     assert.equal(await page.$eval('#source', el => el.textContent), 'Hello source code');
+    assert.equal(await page.$eval('[data-testid="raw-button"]', el => getComputedStyle(el).borderStartStartRadius), '6px');
     await page.evaluate(() => { document.querySelector('#preview').setAttribute('aria-pressed', 'true'); document.querySelector('#preview-content').hidden = false; document.querySelector('#source').hidden = true; });
     await page.waitForFunction(() => !document.querySelector('.ght-control-slot').hidden);
-    assert.equal(await page.$eval('.actions .ght-toggle', el => el.getAttribute('aria-pressed')), 'true');
+    assert.equal(await page.$eval('.file-actions .ght-toggle', el => el.getAttribute('aria-pressed')), 'true');
+  } finally { await page.close(); }
+});
+
+test('a file translates the latest commit even with document translation disabled', async () => {
+  const header = `<div><div data-testid="latest-commit"><a href="/alice">alice</a>
+    <span data-testid="latest-commit-html"><a data-hovercard-type="commit" href="/owner/repo/commit/1234567">docs: Hello file</a> (<a data-hovercard-type="pull_request" href="/owner/repo/pull/42">#42</a>)</span>
+    <button aria-label="Checks passed">✓</button></div>
+    <div data-testid="latest-commit-details"><a href="/owner/repo/commit/1234567">1234567</a><relative-time>2 days ago</relative-time></div>
+    <div class="history"><a href="/owner/repo/commits/main/test.js">History</a><div hidden><a href="/owner/repo/commits/main/test.js">History</a></div></div>
+  </div>`;
+  const { page, settled } = await fixture(header + '<pre class="js-file-content">Hello source</pre>', {
+    path: '/owner/repo/blob/main/test.js', auto: false, parts: { readme: false },
+  });
+  try {
+    await page.click('.ght-fab');
+    const toggle = '.history .ght-toggle';
+    await page.waitForSelector(toggle + '[data-state="done"]');
+    await settled();
+    assert.deepEqual(await page.$eval('.history', el => [
+      el.lastElementChild.classList.contains('ght-control-icon'),
+      getComputedStyle(el.querySelector('.ght-toggle')).borderWidth,
+    ]), [true, '0px']);
+    assert.deepEqual(await page.$$eval('[data-ght-clone] a', links => links.map(link => [link.textContent, link.getAttribute('href')])), [
+      ['docs: Привет file', '/owner/repo/commit/1234567'], ['#42', '/owner/repo/pull/42'],
+    ]);
+    assert.equal(await page.$eval('pre', el => el.textContent), 'Hello source');
+    await page.click(toggle);
+    assert.equal(await page.$eval('[data-testid="latest-commit-html"]', el => [el.textContent.trim(), el.hasAttribute('data-ght-hidden')].join('|')), 'docs: Hello file (#42)|false');
   } finally { await page.close(); }
 });
 
@@ -359,6 +412,31 @@ test('a PR comment matches the round reaction control and uses the same gap with
       return [rect.width, rect.height, style.borderRadius, style.borderWidth];
     });
     assert.deepEqual(await shape('.ght-toggle'), await shape('.smile'));
+  } finally { await page.close(); }
+});
+
+test('the PR reaction toggle sits beside the visible buttons inside the native reaction form', async () => {
+  const markup = `<style>
+    .js-pick-reaction, .smile-wrapper { margin-inline-end: 8px !important }
+    .js-comment-reactions-options { display: flex; align-items: center }
+    .smile { display: block; width: 26px; height: 26px }
+  </style><div class="js-comment" id="pullrequest-1">
+    <div class="markdown-body">Hello description</div>
+    <div class="comment-reactions"><form class="js-pick-reaction">
+      <div class="js-comment-reactions-options">
+        <div class="smile-wrapper"><button type="button" class="smile">☺</button></div>
+        <div class="js-reactions-container"><details hidden></details></div>
+      </div>
+    </form></div>
+  </div>`;
+  const { page } = await fixture(markup);
+  try {
+    const toggle = '.js-comment-reactions-options .ght-toggle';
+    await page.waitForSelector(toggle + '[data-state="done"]');
+    assert.equal(await page.$eval(toggle, el =>
+      el.getBoundingClientRect().left - document.querySelector('.smile').getBoundingClientRect().right), 4);
+    await page.click(toggle);
+    assert.equal(await page.$eval(toggle, el => el.getAttribute('aria-pressed')), 'true');
   } finally { await page.close(); }
 });
 
@@ -824,11 +902,15 @@ test('Issues translate both headings, the innermost rendered body and comments w
   } finally { await page.close(); }
 });
 
-test('the Issue title icon follows the visible actions row and precedes New issue', async () => {
+test('the Issue title action matches New issue in the visible actions row', async () => {
   const menu = '<div class="menuActionsContainer__test"><div class="create"><a href="/owner/repo/issues/new/choose">New issue</a></div><button>Copy link</button></div>';
   const context = `<div data-component="PageHeader.ContextAreaActions">${menu}</div>`;
   const actions = `<div data-component="PH_Actions">${menu}</div>`;
-  const layout = `<style>[data-component="PageHeader.ContextAreaActions"]{display:none}.menuActionsContainer__test{display:flex;align-items:center;gap:4px}@media(max-width:767px){[data-component="PH_Actions"]{display:none}[data-component="PageHeader.ContextAreaActions"]{display:flex}}</style>`;
+  const layout = `<style>:root{--button-primary-bgColor-rest:#238636;--button-primary-borderColor-rest:#3e9b50}
+    [data-component="PageHeader.ContextAreaActions"]{display:none}
+    .menuActionsContainer__test{display:flex;align-items:center;gap:4px}
+    .create a{display:inline-flex;box-sizing:border-box;height:32px;border:1px solid #3e9b50;border-radius:6px;background:#238636;color:white}
+    @media(max-width:767px){[data-component="PH_Actions"]{display:none}[data-component="PageHeader.ContextAreaActions"]{display:flex}}</style>`;
   const body = issuePage.replace('<div data-component="PH_Actions"><button>Edit</button></div>', context + actions);
   const { page, settled } = await fixture(layout + body, { path: '/owner/repo/issues/42' });
   try {
@@ -837,7 +919,14 @@ test('the Issue title icon follows the visible actions row and precedes New issu
       const selector = `[data-component="${component}"] .ght-toggle`;
       await page.waitForSelector(selector + '[data-state="done"]', { visible: true });
       await settled();
-      assert.equal(await page.$eval(selector, el => el.parentElement.nextElementSibling.className), 'create');
+      assert.deepEqual(await page.$eval(selector, el => {
+        const sibling = el.parentElement.nextElementSibling;
+        const shape = node => {
+          const style = getComputedStyle(node);
+          return [node.offsetHeight, style.backgroundColor, style.borderColor, style.borderRadius];
+        };
+        return [sibling.className, JSON.stringify(shape(el)) === JSON.stringify(shape(sibling.firstElementChild))];
+      }), ['create', true]);
       assert.equal(await page.$$eval('.ght-control-title', els => els.length), 1);
       if (width === 375) await page.click(selector);
     }
@@ -846,8 +935,8 @@ test('the Issue title icon follows the visible actions row and precedes New issu
 });
 
 test('the Discussion title control sits beside Edit and survives an action row replacement', async () => {
-  const layout = '<style>.gh-header-actions{display:flex;align-items:center;justify-content:flex-end}</style>';
-  const actions = '<div class="gh-header-actions"><button>Subscribe</button><span><button class="js-details-target">Edit</button></span></div>';
+  const layout = '<style>.gh-header-actions{display:flex;align-items:center;justify-content:flex-end}.edit-action,.js-details-target{margin-inline-start:16px!important}</style>';
+  const actions = '<div class="gh-header-actions"><button>Subscribe</button><span class="edit-action"><button class="js-details-target">Edit</button></span></div>';
   const { page, settled } = await fixture(`${layout}<main><div class="gh-header js-discussions-title-container"><h1 class="gh-header-title"><span class="js-issue-title">Hello discussion headline</span><span class="gh-header-number"> #24046</span></h1>${actions}</div></main>`, { path: '/owner/repo/discussions/24046' });
   try {
     const toggle = '.gh-header-actions .ght-toggle';
@@ -858,10 +947,10 @@ test('the Discussion title control sits beside Edit and survives an action row r
       await page.setViewport({ width, height: 900 });
       const placement = await page.$eval(toggle, el => {
         const button = el.getBoundingClientRect();
-        const edit = el.parentElement.nextElementSibling.firstElementChild;
+        const edit = el.parentElement.nextElementSibling;
         return { neighbour: edit.textContent, gap: edit.getBoundingClientRect().left - button.right, visible: button.width > 0 && button.right <= innerWidth };
       });
-      assert.deepEqual(placement, { neighbour: 'Edit', gap: 8, visible: true }, `width ${width}`);
+      assert.deepEqual(placement, { neighbour: 'Edit', gap: 4, visible: true }, `width ${width}`);
     }
     await page.click(toggle);
     await page.evaluate(html => { document.querySelector('.gh-header-actions').outerHTML = html; }, actions);
@@ -1073,22 +1162,20 @@ test('Wiki title, document and footer use only the page button; in-page links ke
 
 const feedCard = id => `<article data-testid="feed-card" id="${id}"><h3><a data-hovercard-type="user" href="/alice">alice</a> Hello <a data-hovercard-type="repository" href="/owner/repo">owner/repo</a> <a href="/owner/repo/issues/42">Hello issue</a></h3><p>Hello activity description <relative-time datetime="2026-11-01">2 weeks ago</relative-time></p><div class="markdown-body"><p>Hello release excerpt</p><pre>Hello command</pre></div><div data-testid="feed-actions"><button type="button" class="star">Star</button><span>42 stars</span></div></article>`;
 
-test('Home and Feed translate card content with one local switch per card, preserving identities, timestamps and actions', async () => {
+test('Home and Feed use one page switch and preserve identities, timestamps and actions', async () => {
   for (const path of ['/', '/dashboard', '/dashboard-feed', '/feed']) {
     const { page, settled } = await fixture(`<main id="dashboard">${feedCard('first-card')}${feedCard('second-card')}<nav><a href="/owner/repo/issues/43">Hello navigation</a></nav><form><div class="markdown-body">Hello editable preview</div></form></main>`, { path });
     try {
-      await page.waitForFunction(() => document.querySelectorAll('.ght-toggle[data-state="done"]').length === 2);
+      await page.waitForFunction(() => document.querySelectorAll('[data-ght-clone]').length === 6);
       await settled();
       assert.equal(await page.$$eval('#first-card [data-ght-clone]', els => els.length), 3);
-      assert.equal(await page.$eval('#first-card [data-testid="feed-actions"]', el => el.previousElementSibling.classList.contains('ght-control-slot')), true);
+      assert.equal(await page.$$eval('.ght-toggle', els => els.length), 0);
       assert.equal(await page.$eval('#first-card [data-ght-clone] [data-hovercard-type="repository"]', el => el.textContent), 'owner/repo');
       assert.equal(await page.$eval('#first-card p[data-ght-clone] relative-time', el => el.textContent), '2 weeks ago');
       assert.equal(await page.$eval('#first-card .star', el => el.textContent), 'Star');
       assert.equal(await page.$$eval('form [data-ght-clone], nav [data-ght-clone]', els => els.length), 0);
-      await page.click('#first-card .ght-toggle');
-      assert.equal(await page.$$eval('#first-card [data-ght-clone]', els => els.every(el => el.hasAttribute('data-ght-hidden'))), true);
-      assert.equal(await page.$$eval('#second-card [data-ght-clone]', els => els.every(el => !el.hasAttribute('data-ght-hidden'))), true);
       await page.click('.ght-fab');
+      assert.equal(await page.$$eval('[data-ght-clone]', els => els.every(el => el.hasAttribute('data-ght-hidden'))), true);
       await page.click('.ght-fab');
       assert.equal(await page.$$eval('[data-ght-clone]', els => els.every(el => !el.hasAttribute('data-ght-hidden'))), true);
     } finally { await page.close(); }
@@ -1098,13 +1185,52 @@ test('Home and Feed translate card content with one local switch per card, prese
 test('legacy feed content and newly loaded cards are translated without duplicating nested content', async () => {
   const { page, settled } = await fixture('<main id="dashboard"><div class="news"><div class="body" id="legacy"><p>Hello activity</p><div class="markdown-body"><p>Hello excerpt</p></div></div></div></main>', { path: '/dashboard-feed' });
   try {
-    await page.waitForSelector('.ght-toggle[data-state="done"]');
+    await page.waitForSelector('#legacy [data-ght-clone]');
     await settled();
     assert.equal(await page.$$eval('#legacy [data-ght-clone]', els => els.length), 2);
+    await page.click('.ght-fab');
     await page.evaluate(html => document.querySelector('main').insertAdjacentHTML('beforeend', html), feedCard('late-card'));
-    await page.waitForSelector('#late-card .ght-toggle[data-state="done"]');
-    assert.equal(await page.$$eval('.ght-toggle', els => els.length), 2);
-    assert.equal(await page.$$eval('#late-card [data-ght-clone]', els => els.length), 3);
+    await page.waitForFunction(() => document.querySelectorAll('#late-card [data-ght-clone][data-ght-hidden]').length === 3);
+    assert.equal(await page.$$eval('.ght-toggle', els => els.length), 0);
+    await page.click('.ght-fab');
+    assert.equal(await page.$$eval('#late-card [data-ght-clone]:not([data-ght-hidden])', els => els.length), 3);
+  } finally { await page.close(); }
+});
+
+test('current feed cards translate linked PR titles, excerpts and plain repository descriptions', async () => {
+  const repo = (name, description) => `<div>
+    <div><a data-hovercard-type="repository" href="/owner/${name}">owner/${name}</a><button>Star</button></div>
+    <div class="color-fg-default">${description}</div><div class="fgColor-muted">42 stars</div>
+  </div>`;
+  const feed = `
+    <main><turbo-frame id="feed-list">
+      <article class="js-feed-item-component"><div class="fgColor-muted"><a href="/alice">alice</a> starred a repository</div>
+        ${repo('starred', 'Hello starred repository')}
+      </article>
+      <article class="js-feed-item-component">
+        <h3><a data-hovercard-type="pull_request" href="/owner/repo/pull/42">Hello pull request</a> <span>#42</span></h3>
+        <div class="fgColor-muted">alice merged 1 commit</div>
+        <div class="markdown-body"><p>Hello pull request excerpt</p></div>
+      </article>
+      <article class="js-feed-item-component"><h3>Trending repositories</h3>
+        <article>${repo('trending', 'Hello trending repository')}</article>
+        ${repo('also-trending', 'Hello another trending repository')}
+      </article>
+      <article class="js-feed-item-component"><h3>Recommended for you</h3>
+        ${repo('recommended', 'Hello recommended repository')}
+      </article>
+    </turbo-frame></main>`;
+  const { page, settled } = await fixture(feed, { path: '/feed' });
+  try {
+    await page.waitForFunction(() => document.querySelectorAll('[data-ght-clone]').length === 6);
+    await settled();
+    assert.deepEqual(await page.$$eval('[data-ght-clone]', els => els.map(el => el.textContent.trim())), [
+      'Привет starred repository', 'Привет pull request #42', 'Привет pull request excerpt',
+      'Привет trending repository', 'Привет another trending repository', 'Привет recommended repository',
+    ]);
+    assert.equal(await page.$eval('h3[data-ght-clone] a', el => el.getAttribute('href')), '/owner/repo/pull/42');
+    assert.equal(await page.$$eval('button:not(.ght-fab)', els => els.every(el => el.textContent === 'Star')), true);
+    assert.equal(await page.$$eval('.fgColor-muted[data-ght-hidden], .ght-control-slot', els => els.length), 0);
   } finally { await page.close(); }
 });
 

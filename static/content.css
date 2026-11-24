@@ -19,7 +19,7 @@
   display: none !important;
 }
 
-:is(.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]):has(> .ght-control-slot) {
+:is(.comment-reactions, .js-comment-reactions-options, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]):has(> .ght-control-slot) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -33,6 +33,14 @@
 
 /* GitHub already adds trailing space to each reaction in this form. */
 .comment-reactions:has(> .ght-control-icon):has(.js-pick-reaction .tmp-mr-1) {
+  column-gap: 0;
+}
+
+.js-comment-reactions-options > :has(+ .ght-control-reaction) {
+  margin-inline-end: 0 !important;
+}
+
+.js-comment-reactions-options:has(> :has(.tmp-mr-1) + .ght-control-reaction) {
   column-gap: 0;
 }
 
@@ -76,9 +84,16 @@ h2:has(> .ght-control-about),
 }
 
 .ght-control-about:has(+ :is(button, a)),
-.ght-control-readme,
-.js-discussions-title-container .ght-control-action:has(+ *) {
+.ght-control-readme {
   margin-inline-end: var(--base-size-8, 8px);
+}
+
+.ght-control-discussion {
+  margin-inline-end: var(--base-size-4, 4px);
+}
+
+.ght-control-discussion + :is(button, a) {
+  margin-inline-start: 0 !important;
 }
 
 .ght-control-commit-hash {
@@ -207,6 +222,29 @@ h2:has(> .ght-control-about),
 .ght-control-action .ght-toggle:hover:enabled {
   border-color: var(--button-default-borderColor-hover, var(--borderColor-default, #d1d9e0));
   background: var(--button-default-bgColor-hover, var(--bgColor-muted, #f6f8fa));
+}
+
+.ght-control-primary .ght-toggle,
+.ght-control-primary .ght-toggle[data-translated] {
+  --ght-icon-color: var(--button-primary-fgColor-rest, #fff);
+  border-color: var(--button-primary-borderColor-rest, #1f232826);
+  background: var(--button-primary-bgColor-rest, #1f883d);
+  box-shadow: var(--shadow-resting-small, none);
+}
+
+.ght-control-primary .ght-toggle:not([data-translated])::before {
+  opacity: 0.75;
+}
+
+.ght-control-primary .ght-toggle:hover:enabled {
+  border-color: var(--button-primary-borderColor-hover, #1f232826);
+  background: var(--button-primary-bgColor-hover, #1c8139);
+}
+
+.ght-control-file-action .ght-toggle {
+  width: var(--control-small-size, 28px);
+  min-height: var(--control-small-size, 28px);
+  padding-block: 0;
 }
 
 .ght-control-reaction .ght-toggle {

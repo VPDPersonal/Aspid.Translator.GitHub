@@ -35,7 +35,12 @@ export const LIST_TITLE = 'a[data-testid="issue-listitem-title-link"], a[data-te
 export const DISCUSSION_LIST_TITLE = 'a.discussion-title, a.discussion-Link--secondary, a[data-testid="discussion-title"]';
 export const RELEASE_TITLE = '[data-test-selector="release-title"], .release-title, .Box-body .f1 a[href*="/releases/tag/"], .Box-body > .d-flex h1';
 export const WIKI_TITLE = '#wiki-wrapper .gh-header-title, .repository-content .gh-header-title';
-export const FEED_CARD = '.feed-item, .dashboard-feed-item, [data-testid="feed-item"], [data-testid="feed-card"], [data-testid="event-card"], [data-testid="issue-card"], [class*="FeedCard"], [class*="feedCard"], [class*="FeedItem"], [class*="feedItem"], .news .body, main article, [role="main"] article, [role="article"]';
+const MODERN_FEED_CARD = 'article.js-feed-item-component, article[data-hydro-view*="feed_card"]';
+export const FEED_CARD = `${MODERN_FEED_CARD}, .feed-item, .dashboard-feed-item, [data-testid="feed-item"], [data-testid="feed-card"], [data-testid="event-card"], [data-testid="issue-card"], [class*="FeedCard"], [class*="feedCard"], [class*="FeedItem"], [class*="feedItem"], .news .body, main article, [role="main"] article, [role="article"]`;
+export const FEED_TITLE_LINK = 'a[href*="/issues/"], a[href*="/pull/"], a[href*="/discussions/"], a[href*="/releases/tag/"], a[href*="/commit/"]';
+const FEED_TITLE_PATH = /\/(?:issues|pull|discussions)\/\d+(?:[/?#]|$)|\/releases\/tag\/|\/commit\/[0-9a-f]{7,40}(?:[/?#]|$)/i;
+const FEED_CONTENT = '.markdown-body, p, h2, h3, h4, .repo-description, .repo-desc, [data-testid="repo-description"], [itemprop="description"], .feed-event-title';
+const FEED_UI = 'form, button, [role="button"], nav, aside, [role="navigation"], .sr-only, [aria-hidden="true"], [data-ght-clone], [data-ght-ui]';
 
 export function listScope(el) {
   return el.closest('[data-testid="issues-list-surface"], [data-testid="pull-request-list"], [data-testid="discussion-list"]')
@@ -61,22 +66,30 @@ export function wikiScope(el) {
 }
 
 export function feedContent() {
-  const marker = document.querySelector('.news, #dashboard, .dashboard, [data-testid*="feed"], [data-target*="feed"], [data-testid="dashboard"]');
+  const marker = document.querySelector(`${MODERN_FEED_CARD}, .news, #dashboard, .dashboard, [data-testid*="feed"], [data-target*="feed"], [data-testid="dashboard"]`);
   if (!document.body.classList.contains('logged-in') && !marker) return [];
   const nodes = new Set();
-  const cards = [...document.querySelectorAll(FEED_CARD)].filter(card => !card.closest('nav, aside, [role="navigation"], [data-ght-clone]'));
-  for (const card of cards) {
+  for (const card of document.querySelectorAll(FEED_CARD)) {
+    if (card.closest(FEED_UI)) continue;
+    const selector = card.closest(MODERN_FEED_CARD) ? `${FEED_CONTENT}, div` : FEED_CONTENT;
     // Read rendered content, never identity controls, event counters or navigation.
-    for (const node of card.querySelectorAll('.markdown-body, p, h2, h3, .repo-description, .repo-desc, [data-testid="repo-description"], .feed-event-title')) {
-      if (node.closest('form, button, [role="button"], nav, aside, [data-ght-clone], [data-ght-ui]')) continue;
+    for (const node of card.querySelectorAll(selector)) {
+      if (node.closest(FEED_UI) || node.closest(FEED_CARD) !== card) continue;
       if (!node.matches('.markdown-body') && node.querySelector('button, input, select, textarea, form, [role="button"]')) continue;
       if (node.parentElement.closest('.markdown-body') || node.querySelector('.markdown-body')) continue;
-      if (node.matches('h2, h3') && !node.querySelector('a[href*="/issues/"], a[href*="/pull/"], a[href*="/discussions/"], a[href*="/releases/"], a[href*="/commit/"]')) continue;
+      if (node.matches('h2, h3, h4') && !node.querySelector(FEED_TITLE_LINK)) continue;
+      // Current repository cards also render descriptions as plain divs.
+      if (!node.matches(FEED_CONTENT) && (
+        node.closest('a, .fgColor-muted, .color-fg-muted, [data-testid="feed-actions"], .feed-actions') ||
+        node.querySelector('div, p, h2, h3, h4, ul, ol, article, relative-time, time, a[data-hovercard-type="repository"], a[data-hovercard-type="user"]') ||
+        ![...node.childNodes].some(child => child.nodeType === Node.TEXT_NODE && /\p{L}/u.test(child.nodeValue))
+      )) continue;
       nodes.add(node);
     }
-    for (const link of card.querySelectorAll('a[href]')) {
-      if (!/\/(?:issues|pull|discussions)\/\d+(?:[?#]|$)|\/releases\/tag\/|\/commit\/[0-9a-f]{7,40}(?:[?#]|$)/i.test(link.getAttribute('href') ?? '')) continue;
-      if (link.closest('.markdown-body, nav, aside, form, [data-ght-clone]') || [...nodes].some(node => node.contains(link))) continue;
+    for (const link of card.querySelectorAll(FEED_TITLE_LINK)) {
+      if (!FEED_TITLE_PATH.test(link.getAttribute('href'))) continue;
+      if (link.closest(`.markdown-body, ${FEED_UI}`) || link.closest(FEED_CARD) !== card) continue;
+      if ([...nodes].some(node => node.contains(link))) continue;
       if (/^(?:#\d+|[\w.-]+\/[\w.-]+#\d+|[0-9a-f]{7,40})$/i.test(link.textContent.trim())) continue;
       nodes.add(link);
     }
