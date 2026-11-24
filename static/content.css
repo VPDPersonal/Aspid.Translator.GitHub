@@ -97,7 +97,7 @@ h2:has(> .ght-control-about),
 }
 
 .ght-control-commit-hash {
-  margin-inline-end: 0;
+  margin-inline-start: var(--base-size-4, 4px);
 }
 
 .ght-control-title-standalone {
@@ -222,23 +222,6 @@ h2:has(> .ght-control-about),
 .ght-control-action .ght-toggle:hover:enabled {
   border-color: var(--button-default-borderColor-hover, var(--borderColor-default, #d1d9e0));
   background: var(--button-default-bgColor-hover, var(--bgColor-muted, #f6f8fa));
-}
-
-.ght-control-primary .ght-toggle,
-.ght-control-primary .ght-toggle[data-translated] {
-  --ght-icon-color: var(--button-primary-fgColor-rest, #fff);
-  border-color: var(--button-primary-borderColor-rest, #1f232826);
-  background: var(--button-primary-bgColor-rest, #1f883d);
-  box-shadow: var(--shadow-resting-small, none);
-}
-
-.ght-control-primary .ght-toggle:not([data-translated])::before {
-  opacity: 0.75;
-}
-
-.ght-control-primary .ght-toggle:hover:enabled {
-  border-color: var(--button-primary-borderColor-hover, #1f232826);
-  background: var(--button-primary-bgColor-hover, #1c8139);
 }
 
 .ght-control-file-action .ght-toggle {

@@ -124,7 +124,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
 
 const title = '<div class="titleWithAction"><h1><span class="markdown-title">Hello title</span></h1><button id="edit">Edit</button></div>';
 const comment = (id = 'pullrequest-1', text = 'Hello description') => `<div class="js-comment" id="${id}"><div class="markdown-body"><p>${text}</p><code>SomeCode()</code></div><div class="comment-reactions"><form><button type="button" class="smile">Smile</button></form></div></div>`;
-const timeline = `<div class="js-details-container" id="timeline-commit"><div class="d-flex"><div class="title"><code><a class="markdown-title" href="/owner/repo/pull/1/commits/d9a1e8c">Hello commit</a></code><button id="expand">…</button></div><div id="verified">Verified</div><div>✓</div><div class="text-right"><a href="/owner/repo/pull/1/commits/d9a1e8c">d9a1e8c</a></div></div><div class="Details-content--hidden" hidden><pre>Hello commit body</pre></div></div>`;
+const timeline = `<div class="js-details-container" id="timeline-commit"><div class="d-flex"><div class="title"><code><a class="markdown-title" href="/owner/repo/pull/1/commits/d9a1e8c">Hello commit</a></code><button id="expand">…</button></div><div id="verified">Verified</div><div>✓</div><div class="text-right"><code><a href="/owner/repo/pull/1/commits/d9a1e8c">d9a1e8c</a></code></div></div><div class="Details-content--hidden" hidden><pre>Hello commit body</pre></div></div>`;
 const row = id => `<li data-testid="commit-row-item" id="${id}"><div data-listview-item-title-container><h4><a href="#${id}"><span>Hello ${id}</span></a></h4></div><div><div class="extended-commit-description-container">Hello body</div></div><div class="metadata"><span class="verified">Verified</span><div class="primary d-none d-sm-flex"><a data-testid="commit-row-browse-repo" href="#browse">Browse</a></div></div></li>`;
 
 test('comment controls sit after reactions; global actions reset local choices and synchronize both PR headings', async () => {
@@ -147,17 +147,23 @@ test('comment controls sit after reactions; global actions reset local choices a
   } finally { await page.close(); }
 });
 
-test('the PR timeline toggle follows the commit hash and keeps its choice when the body translates', async () => {
-  const { page, settled } = await fixture(timeline);
+test('the borderless PR timeline toggle follows the nested commit hash and keeps its choice', async () => {
+  const { page, settled } = await fixture('<style>#timeline-commit .d-flex{display:flex;align-items:center}.title{flex:1}</style>' + timeline);
   try {
     await page.waitForSelector('#timeline-commit .ght-toggle[data-state="done"]');
     await settled();
     assert.deepEqual(await page.$eval('#timeline-commit .ght-control-slot', el => {
-      const hash = el.previousElementSibling;
+      const hash = el.previousElementSibling.querySelector('a');
       const link = hash.getBoundingClientRect();
       const toggle = el.getBoundingClientRect();
-      return { hash: hash.textContent, gap: toggle.left - link.right, aligned: Math.abs(toggle.top + toggle.height / 2 - link.top - link.height / 2) < 1 };
-    }), { hash: 'd9a1e8c', gap: 8, aligned: true });
+      return {
+        hash: hash.textContent,
+        gap: toggle.left - link.right,
+        border: getComputedStyle(el.querySelector('.ght-toggle')).borderWidth,
+        rightmost: toggle.right === el.closest('.d-flex').getBoundingClientRect().right,
+        aligned: Math.abs(toggle.top + toggle.height / 2 - link.top - link.height / 2) < 1,
+      };
+    }), { hash: 'd9a1e8c', gap: 4, border: '0px', rightmost: true, aligned: true });
     await page.click('#timeline-commit .ght-toggle');
     await page.evaluate(() => { document.querySelector('.Details-content--hidden').hidden = false; });
     await page.waitForFunction(() => document.querySelector('.Details-content--hidden [data-ght-clone]'));
@@ -170,12 +176,15 @@ test('the PR timeline toggle follows the commit hash and keeps its choice when t
   } finally { await page.close(); }
 });
 
-test('commit list buttons affect only their own row and sit before metadata', async () => {
-  const { page, settled } = await fixture(`<ul>${row('first')}${row('second')}</ul>`, { path: '/owner/repo/pull/1/commits' });
+test('borderless commit list toggles sit after metadata and affect only their own row', async () => {
+  const { page, settled } = await fixture(`<style>.metadata{display:flex;justify-content:flex-end;gap:8px}</style><ul>${row('first')}${row('second')}</ul>`, { path: '/owner/repo/pull/1/commits' });
   try {
     await page.waitForFunction(() => document.querySelectorAll('.ght-toggle[data-state="done"]').length === 2);
     await settled();
-    assert.equal(await page.$eval('#first .metadata', el => el.firstElementChild.classList.contains('ght-control-slot')), true);
+    assert.deepEqual(await page.$eval('#first .metadata', el => {
+      const control = el.lastElementChild.querySelector('.ght-toggle');
+      return [getComputedStyle(control).borderWidth, control.getBoundingClientRect().right === el.getBoundingClientRect().right];
+    }), ['0px', true]);
     await page.addStyleTag({ content: '@media(max-width:640px){.d-none.d-sm-flex{display:none}}' });
     await page.setViewport({ width: 390, height: 900 });
     assert.equal(await page.$eval('#first .ght-toggle', el => el.getBoundingClientRect().width > 0), true);
@@ -255,13 +264,25 @@ test('file preview places the translation button first in the file actions and m
 });
 
 test('a file translates the latest commit even with document translation disabled', async () => {
-  const header = `<div><div data-testid="latest-commit"><a href="/alice">alice</a>
+  const header = `<style>
+    .file-row{display:flex;align-items:center;justify-content:flex-end;padding-inline:8px}
+    .history{display:flex;align-items:center;gap:8px}
+    .file-actions{display:flex;justify-content:flex-end}
+    .file-actions button{width:28px}
+    #outline{margin-inline-end:8px}
+    @media(min-width:601px){#more-actions{display:none}}
+    @media(max-width:600px){#outline{display:none}}
+  </style><div class="file-row"><div data-testid="latest-commit"><a href="/alice">alice</a>
     <span data-testid="latest-commit-html"><a data-hovercard-type="commit" href="/owner/repo/commit/1234567">docs: Hello file</a> (<a data-hovercard-type="pull_request" href="/owner/repo/pull/42">#42</a>)</span>
     <button aria-label="Checks passed">✓</button></div>
     <div data-testid="latest-commit-details"><a href="/owner/repo/commit/1234567">1234567</a><relative-time>2 days ago</relative-time></div>
     <div class="history"><a href="/owner/repo/commits/main/test.js">History</a><div hidden><a href="/owner/repo/commits/main/test.js">History</a></div></div>
   </div>`;
-  const { page, settled } = await fixture(header + '<pre class="js-file-content">Hello source</pre>', {
+  const toolbar = `<div class="file-row"><div class="file-actions">
+    <div class="react-blob-header-edit-and-raw-actions"></div>
+    <button id="outline"><svg class="octicon-list-unordered"></svg></button><button id="more-actions">…</button>
+  </div></div>`;
+  const { page, settled } = await fixture(header + toolbar + '<pre class="js-file-content">Hello source</pre>', {
     path: '/owner/repo/blob/main/test.js', auto: false, parts: { readme: false },
   });
   try {
@@ -273,6 +294,16 @@ test('a file translates the latest commit even with document translation disable
       el.lastElementChild.classList.contains('ght-control-icon'),
       getComputedStyle(el.querySelector('.ght-toggle')).borderWidth,
     ]), [true, '0px']);
+    for (const [width, action] of [[1280, '#outline'], [390, '#more-actions'], [1280, '#outline']]) {
+      await page.setViewport({ width, height: 900 });
+      await page.waitForFunction((toggle, action) => {
+        const center = selector => {
+          const rect = document.querySelector(selector).getBoundingClientRect();
+          return rect.left + rect.width / 2;
+        };
+        return Math.abs(center(toggle) - center(action)) < 0.5;
+      }, {}, toggle, action);
+    }
     assert.deepEqual(await page.$$eval('[data-ght-clone] a', links => links.map(link => [link.textContent, link.getAttribute('href')])), [
       ['docs: Привет file', '/owner/repo/commit/1234567'], ['#42', '/owner/repo/pull/42'],
     ]);
@@ -902,11 +933,11 @@ test('Issues translate both headings, the innermost rendered body and comments w
   } finally { await page.close(); }
 });
 
-test('the Issue title action matches New issue in the visible actions row', async () => {
+test('the neutral Issue title action matches New issue sizing in the visible actions row', async () => {
   const menu = create => `<div class="menuActionsContainer__test"><div class="create">${create}</div><button>Copy link</button></div>`;
   const context = `<div data-component="PageHeader.ContextAreaActions">${menu('<a href="/owner/repo/issues/new/choose">New issue</a>')}</div>`;
   const actions = `<div data-component="PH_Actions">${menu('<button data-component="Button" data-variant="primary">New issue</button>')}</div>`;
-  const layout = `<style>:root{--button-primary-bgColor-rest:#238636;--button-primary-borderColor-rest:#3e9b50}
+  const layout = `<style>:root{--button-default-bgColor-rest:#212830;--button-default-borderColor-rest:#3d444d}
     [data-component="PageHeader.ContextAreaActions"]{display:none}
     .menuActionsContainer__test{display:flex;align-items:center;gap:4px}
     .create :is(a,button){display:inline-flex;box-sizing:border-box;height:32px;border:1px solid #3e9b50;border-radius:6px;background:#238636;color:white}
@@ -923,10 +954,15 @@ test('the Issue title action matches New issue in the visible actions row', asyn
         const sibling = el.parentElement.nextElementSibling;
         const shape = node => {
           const style = getComputedStyle(node);
-          return [node.offsetHeight, style.backgroundColor, style.borderColor, style.borderRadius];
+          return [node.offsetHeight, style.borderRadius];
         };
-        return [sibling.className, JSON.stringify(shape(el)) === JSON.stringify(shape(sibling.firstElementChild))];
-      }), ['create', true]);
+        return [
+          sibling.className,
+          JSON.stringify(shape(el)) === JSON.stringify(shape(sibling.firstElementChild)),
+          getComputedStyle(el).backgroundColor,
+          getComputedStyle(sibling.firstElementChild).backgroundColor,
+        ];
+      }), ['create', true, 'rgb(33, 40, 48)', 'rgb(35, 134, 54)']);
       assert.equal(await page.$$eval('.ght-control-title', els => els.length), 1);
       if (width === 375) await page.click(selector);
     }
@@ -1161,6 +1197,42 @@ test('Wiki title, document and footer use only the page button; in-page links ke
 });
 
 const feedCard = id => `<article data-testid="feed-card" id="${id}"><h3><a data-hovercard-type="user" href="/alice">alice</a> Hello <a data-hovercard-type="repository" href="/owner/repo">owner/repo</a> <a href="/owner/repo/issues/42">Hello issue</a></h3><p>Hello activity description <relative-time datetime="2026-11-01">2 weeks ago</relative-time></p><div class="markdown-body"><p>Hello release excerpt</p><pre>Hello command</pre></div><div data-testid="feed-actions"><button type="button" class="star">Star</button><span>42 stars</span></div></article>`;
+
+test('Home translates the dashboard work lists without feed cards or per-row controls', async () => {
+  const markup = `
+    <main><div class="copilot-prompt" contenteditable>Hello Copilot prompt</div>
+      <section><h2>Pull requests</h2><a href="/pulls">View all</a><ul><li>
+        <a id="pr" href="/owner/repo/pull/27" data-hovercard-type="pull_request"><span class="fgColor-default">fix(ui): Hello pull request</span>
+          <span class="fgColor-muted">owner/repo#27 · Opened by alice · <relative-time>yesterday</relative-time></span>
+        </a>
+      </li></ul></section>
+      <section><h2>Issues</h2><a href="/issues">View all</a><ul id="issues"><li>
+        <a id="issue" href="https://github.com/owner/repo/issues/42?source=home">Hello issue</a>
+        <a href="/owner/repo/issues/42">owner/repo#42</a>
+      </li></ul></section>
+      <nav><a href="/owner/repo/issues/43">Hello navigation</a></nav>
+      <a href="https://example.com/owner/repo/issues/44">Hello external reference</a>
+    </main>`;
+  const { page, settled } = await fixture(markup, { path: '/', auto: false });
+  try {
+    assert.equal(await page.$eval('.ght-fab', el => el.textContent), 'Translate');
+    await page.click('.ght-fab');
+    await page.waitForFunction(() => document.querySelectorAll('[data-ght-clone]').length === 2);
+    await settled();
+    assert.deepEqual(await page.$$eval('[data-ght-clone]', els => els.map(el => el.textContent.trim())), [
+      'fix(ui): Привет pull request', 'Привет issue',
+    ]);
+    assert.equal(await page.$eval('#pr .fgColor-muted', el => el.textContent), 'owner/repo#27 · Opened by alice · yesterday');
+    assert.equal(await page.$$eval('h2[data-ght-source], .copilot-prompt[data-ght-source], nav [data-ght-source], .ght-control-slot', els => els.length), 0);
+    await page.click('.ght-fab');
+    await page.$eval('#issues', el => {
+      el.insertAdjacentHTML('beforeend', '<li><a href="/owner/repo/issues/45">Hello updated issue</a></li>');
+    });
+    await page.waitForFunction(() => document.querySelectorAll('[data-ght-clone][data-ght-hidden]').length === 3);
+    await page.click('.ght-fab');
+    assert.equal(await page.$$eval('#issues [data-ght-clone]:not([data-ght-hidden])', els => els.at(-1).textContent), 'Привет updated issue');
+  } finally { await page.close(); }
+});
 
 test('Home and Feed use one page switch and preserve identities, timestamps and actions', async () => {
   for (const path of ['/', '/dashboard', '/dashboard-feed', '/feed']) {

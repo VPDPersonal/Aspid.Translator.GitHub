@@ -123,7 +123,10 @@ function documentHeader(el) {
 function commitPosition(root, el) {
   if (root.matches(LATEST_COMMIT)) {
     const header = root.querySelector(LATEST_COMMIT_DETAILS) ? root : root.parentElement;
-    return historyPosition(header);
+    const actions = document.querySelector('.react-blob-header-edit-and-raw-actions')?.parentElement;
+    const outline = actions?.querySelector('.octicon-list-unordered')?.closest('button');
+    const endMargin = outline?.getClientRects().length ? getComputedStyle(outline).marginInlineEnd : '';
+    return { ...historyPosition(header), endMargin };
   }
   if (root.matches(REFERENCED_COMMIT)) {
     const actions = root.querySelector('[class*="commitActions"]');
@@ -144,7 +147,7 @@ function commitPosition(root, el) {
   if (root.matches('[data-testid="commit-row-item"]')) {
     const actions = root.querySelector('[data-testid="commit-row-browse-repo"]');
     const metadata = actions && branch(actions, root);
-    if (metadata) return { parent: metadata, before: metadata.firstChild };
+    if (metadata) return { parent: metadata, appearance: 'icon' };
   }
   if (root.matches('.js-details-container')) {
     const row = root.closest('.js-commits-list-item');
@@ -158,9 +161,9 @@ function commitPosition(root, el) {
     const line = title?.parentElement.parentElement;
     if (line) {
       const hash = [...line.querySelectorAll('a[href*="/commit/"], a[href*="/commits/"]')].find(link =>
-        COMMIT_HASH.test(link.textContent.trim()) && !link.closest('code, [data-ght-clone]'));
-      if (hash) return { parent: hash.parentElement, before: hash.nextSibling, commitHash: true };
-      return { parent: line, before: title.parentElement.nextSibling };
+        COMMIT_HASH.test(link.textContent.trim()) && !title.contains(link) && !link.closest('[data-ght-clone]'));
+      const anchor = hash?.closest('code') ?? hash;
+      return { parent: anchor?.parentElement ?? line, appearance: 'icon', commitHash: true };
     }
   }
   const title = root.querySelector('h1, h2, h4') ?? el;
@@ -192,7 +195,7 @@ function titlePosition(root, titleKind) {
       return {
         parent,
         before: (createIssue && branch(createIssue, parent)) ?? parent.firstChild,
-        appearance: createIssue ? 'primary' : appearance,
+        appearance: 'action',
       };
     }
   }
@@ -284,8 +287,7 @@ export function placeControl(group) {
   const { slot, button } = group.control;
   slot.classList.toggle('ght-control-footer', Boolean(target.footer));
   slot.classList.toggle('ght-control-icon', Boolean(target.appearance));
-  slot.classList.toggle('ght-control-action', ['action', 'primary'].includes(target.appearance));
-  slot.classList.toggle('ght-control-primary', target.appearance === 'primary');
+  slot.classList.toggle('ght-control-action', target.appearance === 'action');
   slot.classList.toggle('ght-control-reaction', target.appearance === 'reaction');
   slot.classList.toggle('ght-control-discussion', Boolean(target.discussionControl));
   slot.classList.toggle('ght-control-file-action', Boolean(target.fileAction));
@@ -299,6 +301,7 @@ export function placeControl(group) {
   slot.classList.toggle('ght-control-release', Boolean(target.releaseControl));
   slot.classList.toggle('ght-control-compare', Boolean(target.compareControl));
   slot.classList.toggle('ght-control-reference', Boolean(target.referenceControl));
+  slot.style.marginInlineEnd = target.endMargin ?? '';
   button.classList.toggle('ght-toggle-compact', Boolean(target.compact));
   const before = target.before ?? null;
   // Avoid observing our own no-op placements as GitHub content changes.

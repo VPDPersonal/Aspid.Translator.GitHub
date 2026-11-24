@@ -7,7 +7,7 @@ import {
 import { createLanguageDetector, onDownloadProgress, prepareDetector } from './page-bridge.js';
 import { getProvider } from './providers/index.js';
 import { ABOUT_SELECTOR, FILE_COMMIT_TITLE, controlScope, createControl, directoryMessages, fileCommitMessages, placeControl, removeControl } from './controls.js';
-import { FEED_CARD, FEED_TITLE_LINK, PR_TITLES, REFERENCED_COMMIT, extraTargets, feedContent, pageOf } from './pages.js';
+import { FEED_CARD, FEED_TITLE_LINK, PR_TITLES, REFERENCED_COMMIT, extraTargets, feedContent, homeTitles, pageOf } from './pages.js';
 
 const README_SELECTOR = 'article.markdown-body[itemprop="text"], #readme .markdown-body';
 const EXCLUDE_SELECTOR = [
@@ -569,7 +569,8 @@ function syncFab() {
     && (state.pageAlways || (state.settings.parts.readme && document.querySelector(README_SELECTOR))
       || (state.settings.parts.commitTitles && (directoryMessages().length || fileCommitMessages().length))
       || (state.settings.parts.about && document.querySelector(ABOUT_SELECTOR))
-      || (state.settings.parts.feed && ['home', 'feed'].includes(state.pageKind) && feedContent().length));
+      || (state.settings.parts.feed && ['home', 'feed'].includes(state.pageKind)
+        && (feedContent().length || (state.pageKind === 'home' && homeTitles().length))));
   if (visible) ensureFab();
   else removeFab();
 }
@@ -693,6 +694,6 @@ function applySettings(settings) {
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);
   window.addEventListener('resize', () => {
-    if (state.active && pageOf(location.pathname)?.kind === 'issue') scheduleMaintain();
+    if (state.active && (state.pageKind === 'issue' || fileCommitMessages().length)) scheduleMaintain();
   });
 })();

@@ -39,8 +39,13 @@ const MODERN_FEED_CARD = 'article.js-feed-item-component, article[data-hydro-vie
 export const FEED_CARD = `${MODERN_FEED_CARD}, .feed-item, .dashboard-feed-item, [data-testid="feed-item"], [data-testid="feed-card"], [data-testid="event-card"], [data-testid="issue-card"], [class*="FeedCard"], [class*="feedCard"], [class*="FeedItem"], [class*="feedItem"], .news .body, main article, [role="main"] article, [role="article"]`;
 export const FEED_TITLE_LINK = 'a[href*="/issues/"], a[href*="/pull/"], a[href*="/discussions/"], a[href*="/releases/tag/"], a[href*="/commit/"]';
 const FEED_TITLE_PATH = /\/(?:issues|pull|discussions)\/\d+(?:[/?#]|$)|\/releases\/tag\/|\/commit\/[0-9a-f]{7,40}(?:[/?#]|$)/i;
+const FEED_REFERENCE = /^(?:#\d+|[\w.-]+\/[\w.-]+#\d+|[0-9a-f]{7,40})$/i;
 const FEED_CONTENT = '.markdown-body, p, h2, h3, h4, .repo-description, .repo-desc, [data-testid="repo-description"], [itemprop="description"], .feed-event-title';
 const FEED_UI = 'form, button, [role="button"], nav, aside, [role="navigation"], .sr-only, [aria-hidden="true"], [data-ght-clone], [data-ght-ui]';
+const HOME_MAIN = 'main, [role="main"], #dashboard, .dashboard, react-app[app-name*="dashboard"]';
+const HOME_WORK_LINK = 'a[href*="/issues/"], a[href*="/pull/"]';
+const HOME_WORK_PATH = /^\/[^/]+\/[^/]+\/(?:issues|pull)\/\d+\/?$/;
+const HOME_WORK_TITLE = 'h2, h3, h4, [data-listview-component="title"], [data-testid$="-title"], [class*="itemTitle"], [class*="ItemTitle"], :is(span, div).fgColor-default, :is(span, div).color-fg-default';
 
 export function listScope(el) {
   return el.closest('[data-testid="issues-list-surface"], [data-testid="pull-request-list"], [data-testid="discussion-list"]')
@@ -63,6 +68,18 @@ export function releaseTitles(root = document) {
 
 export function wikiScope(el) {
   return el.closest('#wiki-wrapper, .wiki-container') ?? document.querySelector('.repository-content, main') ?? el.parentElement;
+}
+
+export function homeTitles() {
+  const titles = [];
+  for (const link of document.querySelectorAll(HOME_WORK_LINK)) {
+    if (link.origin !== location.origin || !HOME_WORK_PATH.test(link.pathname) || !link.closest(HOME_MAIN)) continue;
+    if (link.closest(`.markdown-body, dialog, [role="dialog"], ${FEED_UI}`)) continue;
+    const title = link.querySelector(HOME_WORK_TITLE) ?? link;
+    const text = title.textContent.trim();
+    if (text && !FEED_REFERENCE.test(text)) titles.push(title);
+  }
+  return titles;
 }
 
 export function feedContent() {
@@ -90,7 +107,7 @@ export function feedContent() {
       if (!FEED_TITLE_PATH.test(link.getAttribute('href'))) continue;
       if (link.closest(`.markdown-body, ${FEED_UI}`) || link.closest(FEED_CARD) !== card) continue;
       if ([...nodes].some(node => node.contains(link))) continue;
-      if (/^(?:#\d+|[\w.-]+\/[\w.-]+#\d+|[0-9a-f]{7,40})$/i.test(link.textContent.trim())) continue;
+      if (FEED_REFERENCE.test(link.textContent.trim())) continue;
       nodes.add(link);
     }
   }
@@ -104,7 +121,11 @@ export function extraTargets(kind) {
   if (kind === 'discussionList') return [{ mode: 'inline', kind: 'discussions', selector: DISCUSSION_LIST_TITLE, allowInForm: true }];
   if (kind === 'releases') return [{ mode: 'inline', kind: 'releases', find: releaseTitles }];
   if (kind === 'wiki') return [{ mode: 'inline', kind: 'wiki', selector: WIKI_TITLE }];
-  if (kind === 'home' || kind === 'feed') return [{ mode: 'block', kind: 'feed', find: feedContent }];
+  if (kind === 'home') return [
+    { mode: 'block', kind: 'feed', find: feedContent },
+    { mode: 'inline', kind: 'feed', find: homeTitles },
+  ];
+  if (kind === 'feed') return [{ mode: 'block', kind: 'feed', find: feedContent }];
   if (kind === 'compare') return [
     { mode: 'inline', kind: 'commitTitles', find: () => [...document.querySelectorAll('.js-commits-list-item a.markdown-title, [data-testid="commit-row-item"] h4 > a > span')].filter(el => !el.closest('code, pre')) },
     { mode: 'plain', kind: 'commitBodies', selector: '.js-details-container .Details-content--hidden > pre, .extended-commit-description-container' },
