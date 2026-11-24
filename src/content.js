@@ -113,12 +113,31 @@ const sameLanguage = (a, b) => (targetFor(a) ?? a.toLowerCase()) === (targetFor(
 // ---------------------------------------------------------------------------------------------
 // Translation of one element.
 
-async function groupBySource(segments, provider, target, signal) {
+// Yield to the browser between segments so large documents leave time for input and painting.
+const PAGE_WORK_BUDGET_MS = 8;
+
+function pageWorkSlice(signal) {
+  let deadline = performance.now() + PAGE_WORK_BUDGET_MS;
+  return () => {
+    signal.throwIfAborted();
+    if (performance.now() < deadline) return;
+    const nextTask = globalThis.scheduler?.yield?.() ?? new Promise(resolve => setTimeout(resolve, 0));
+    return nextTask.then(() => {
+      signal.throwIfAborted();
+      deadline = performance.now() + PAGE_WORK_BUDGET_MS;
+    });
+  };
+}
+
+async function groupBySource(segments, provider, target, job, pauseIfNeeded) {
+  const { signal } = job.controller;
   const detectLanguage = createLanguageDetector({ signal });
   const batches = new Map();
   const guesses = new Map();
   for (const segment of segments) {
-    signal.throwIfAborted();
+    const pause = pauseIfNeeded();
+    if (pause) await pause;
+    if (job.mode === 'inline') protectPrefix(segment);
     const sample = stripTags(segment.text).slice(0, 2000);
     if (!hasLetters(sample)) continue;
     if (!guesses.has(sample)) {
@@ -142,14 +161,14 @@ async function translateElement(job) {
   const { provider, settings: { target } } = state;
   const { signal } = job.controller;
   signal.throwIfAborted();
+  const pauseIfNeeded = pageWorkSlice(signal);
   const clone = cloneForTranslation(job.el);
   const proseLink = job.el.matches(FILE_COMMIT_TITLE) ? 'a[href*="/commit/"]'
     : job.kind === 'feed' ? FEED_TITLE_LINK : null;
   const segments = job.mode === 'plain' ? collectPlainSegments(clone)
     : collectSegments(clone, proseLink ? el => el.matches(proseLink) : null);
-  if (job.mode === 'inline') segments.forEach(protectPrefix);
 
-  const batches = await groupBySource(segments, provider, target, signal);
+  const batches = await groupBySource(segments, provider, target, job, pauseIfNeeded);
   job.sources.clear();
   let changed = false;
   for (const [source, batch] of batches) {
@@ -157,16 +176,17 @@ async function translateElement(job) {
     // A model download must prepare the specific pair that requested activation.
     job.modelSource = source;
     const result = await provider.translate({ texts: batch.map(segment => segment.text), source, target, signal });
-    signal.throwIfAborted();
     const language = source ?? result.sourceLanguage;
-    batch.forEach((segment, index) => {
+    for (const [index, segment] of batch.entries()) {
+      const pause = pauseIfNeeded();
+      if (pause) await pause;
       const translated = result.translations[index]?.trim();
       if (translated && translated !== segment.text) {
         applyTranslation(segment, translated);
         changed = true;
         if (language) job.sources.add(language);
       }
-    });
+    }
   }
   return changed ? clone : null;
 }
