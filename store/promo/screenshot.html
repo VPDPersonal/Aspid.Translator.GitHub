@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="promo.css">
+<style>
+  .shot {
+    height: 100vh;
+    padding: 26px 80px 0;
+    text-align: center;
+  }
+  h1 { font-size: 43px; }
+  p { margin-top: 8px; font-size: 21px; }
+  .shot::after {
+    content: "";
+    position: absolute;
+    top: calc(var(--window-top) - 7px);
+    left: 50%;
+    width: var(--window-width);
+    height: 1px;
+    translate: -50% 0;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .55;
+  }
+  img {
+    position: absolute;
+    top: var(--window-top);
+    left: 50%;
+    width: var(--window-width);
+    translate: -50% 0;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 18px 48px rgb(0 0 0 / .5), 0 0 0 1px var(--line);
+  }
+</style>
+</head>
+<body>
+  <main class="shot bg">
+    <h1></h1>
+    <p></p>
+    <img alt="">
+  </main>
+</body>
+</html>
