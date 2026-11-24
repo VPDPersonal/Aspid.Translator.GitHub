@@ -1471,6 +1471,30 @@ test('editing a working source cancels its stale translation', async () => {
   } finally { await page.close(); }
 });
 
+test('a translation reply arriving just after an edit is never displayed', async () => {
+  const { page } = await fixture(comment(), { mode: 'stalled' });
+  try {
+    await page.waitForFunction(() => Boolean(window.__hungRequest));
+    await page.evaluate(() => {
+      window.__insertedTranslations = [];
+      new MutationObserver(records => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (node.matches?.('[data-ght-clone]')) window.__insertedTranslations.push(node.querySelector('p').textContent);
+          }
+        }
+      }).observe(document.body, { childList: true, subtree: true });
+      window.__engineMode = 'ready';
+      document.querySelector('[data-ght-source] p').textContent = 'Hello edited description';
+      window.dispatchEvent(new CustomEvent('ght:res', {
+        detail: JSON.stringify({ id: window.__hungRequest, result: ['Привет description'] }),
+      }));
+    });
+    await page.waitForFunction(() => window.__insertedTranslations.includes('Привет edited description'));
+    assert.deepEqual(await page.evaluate(() => window.__insertedTranslations), ['Привет edited description']);
+  } finally { await page.close(); }
+});
+
 
 test('enabling auto preserves a manual translation and its original view', async () => {
   const { page } = await fixture(comment(), { auto: false });

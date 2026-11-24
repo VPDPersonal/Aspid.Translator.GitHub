@@ -131,33 +131,25 @@
     controller?.abort();
   });
 
-  window.addEventListener('ght:req', (event) => {
+  window.addEventListener('ght:req', async (event) => {
     const request = payload(event);
     if (!request || !Number.isSafeInteger(request.id) || requests.has(request.id)
       || !Object.hasOwn(handlers, request.op)) return;
     const controller = new AbortController();
     requests.set(request.id, controller);
-    // Calling the handler directly keeps user activation; Promise.resolve().then() would defer it.
-    let result;
     try {
-      result = handlers[request.op](request.args ?? {}, controller.signal,
+      // The handler starts synchronously, while a click still has user activation.
+      const result = await handlers[request.op](request.args ?? {}, controller.signal,
         () => emit('ght:activity', { id: request.id }));
+      if (!controller.signal.aborted) emit('ght:res', { id: request.id, result });
     } catch (error) {
-      result = Promise.reject(error);
-    }
-    Promise.resolve(result).then(
-      (result) => {
-        if (!controller.signal.aborted) emit('ght:res', { id: request.id, result });
-      },
-      (error) => {
-        if (!controller.signal.aborted) emit('ght:res', {
-          id: request.id,
-          error: error?.message || String(error),
-          code: error?.name === 'NotAllowedError' ? 'activation' : error?.name,
-        });
-      },
-    ).finally(() => {
+      if (!controller.signal.aborted) emit('ght:res', {
+        id: request.id,
+        error: error?.message || String(error),
+        code: error?.name === 'NotAllowedError' ? 'activation' : error?.name,
+      });
+    } finally {
       if (requests.get(request.id) === controller) requests.delete(request.id);
-    });
+    }
   });
 })();

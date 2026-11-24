@@ -47,14 +47,6 @@ const HOME_WORK_LINK = 'a[href*="/issues/"], a[href*="/pull/"]';
 const HOME_WORK_PATH = /^\/[^/]+\/[^/]+\/(?:issues|pull)\/\d+\/?$/;
 const HOME_WORK_TITLE = 'h2, h3, h4, [data-listview-component="title"], [data-testid$="-title"], [class*="itemTitle"], [class*="ItemTitle"], :is(span, div).fgColor-default, :is(span, div).color-fg-default';
 
-export function listScope(el) {
-  return el.closest('[data-testid="issues-list-surface"], [data-testid="pull-request-list"], [data-testid="discussion-list"]')
-    ?? el.closest('[data-listview-component="items-list"]')?.parentElement
-    ?? el.closest('.js-navigation-container, .discussion-list')?.parentElement
-    ?? document.querySelector('.repository-content, main, [role="main"]')
-    ?? el.parentElement;
-}
-
 export function releaseScope(el) {
   return el.closest('[data-release-anchor], .release-entry, [data-testid="release-card"]')
     ?? el.closest('.Box:has([data-test-selector="body-content"])')
@@ -64,10 +56,6 @@ export function releaseScope(el) {
 export function releaseTitles(root = document) {
   return [...root.querySelectorAll(RELEASE_TITLE)].filter(el =>
     !el.closest('[role="dialog"], dialog, .Overlay, include-fragment, [data-ght-clone], [data-ght-ui]'));
-}
-
-export function wikiScope(el) {
-  return el.closest('#wiki-wrapper, .wiki-container') ?? document.querySelector('.repository-content, main') ?? el.parentElement;
 }
 
 export function homeTitles() {

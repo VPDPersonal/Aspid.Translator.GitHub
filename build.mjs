@@ -9,6 +9,8 @@ import { sourceLocales, validateRelease } from './scripts/validate-release.mjs';
 const watch = process.argv.includes('--watch');
 const zip = process.argv.includes('--zip');
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+const manifestPath = join('static', 'manifest.json');
+const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 
 const LOGO = 'assets/banner-logo.svg';
 const ICON_SIZES = [16, 32, 48, 128];
@@ -119,13 +121,6 @@ async function copyFonts() {
   await writeFile('dist/fonts/fonts.css', `${rules.join('\n')}\n`);
 }
 
-// The version lives in package.json only.
-async function writeManifest() {
-  const manifest = JSON.parse(await readFile('static/manifest.json', 'utf8'));
-  const withVersion = { manifest_version: manifest.manifest_version, version: pkg.version, ...manifest };
-  await writeFile('dist/manifest.json', `${JSON.stringify(withVersion, null, 2)}\n`);
-}
-
 async function listFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true, recursive: true });
   return entries.filter((entry) => entry.isFile()).map((entry) => join(entry.parentPath, entry.name));
@@ -146,14 +141,13 @@ async function writeZip() {
 }
 
 await rm('dist', { recursive: true, force: true });
-await mkdir('dist', { recursive: true });
-await cp('static', 'dist', { recursive: true, filter: path => basename(path) !== '.DS_Store' });
+await cp('static', 'dist', { recursive: true, filter: path => path !== manifestPath && basename(path) !== '.DS_Store' });
 await cp('LICENSE', 'dist/LICENSE');
-await writeManifest();
+await writeFile('dist/manifest.json', `${JSON.stringify({ ...manifest, version: pkg.version }, null, 2)}\n`);
 await renderIcons();
 await copyFonts();
 
-const context = await esbuild.context({
+const bundleOptions = {
   entryPoints: {
     background: 'src/background.js',
     bridge: 'src/bridge.js',
@@ -163,18 +157,15 @@ const context = await esbuild.context({
   bundle: true,
   format: 'iife',
   platform: 'browser',
-  target: 'chrome138',
+  target: `chrome${manifest.minimum_chrome_version}`,
   outdir: 'dist',
   logLevel: 'info',
-});
+};
 
 if (watch) {
+  const context = await esbuild.context(bundleOptions);
   await context.watch();
 } else {
-  try {
-    await context.rebuild();
-  } finally {
-    await context.dispose();
-  }
+  await esbuild.build(bundleOptions);
   if (zip) await writeZip();
 }
