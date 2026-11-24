@@ -204,15 +204,6 @@
       }
     }
   },
-  "tooltipError": {
-    "message": "மொழிபெயர்ப்பு தோல்வியடைந்தது: $ERROR$",
-    "description": "Tooltip of a title that failed to translate.",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "sourceUnknown": {
     "message": "மூலம்",
     "description": "Stands for the source language when it is unknown."

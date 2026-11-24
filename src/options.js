@@ -126,9 +126,9 @@ async function init() {
 
 // Every change is saved at once: open GitHub tabs listen to chrome.storage and apply it.
 form.addEventListener('change', async (event) => {
-  showCount();
-  await saveSettings(readForm());
-  if (event.target === $('target')) await showLanguage($('target').value);
+  const settings = readForm();
+  const update = event.target === $('target') ? showLanguage(settings.target) : showCount();
+  await Promise.all([saveSettings(settings), update]);
   showSaved();
 });
 form.addEventListener('submit', (event) => event.preventDefault());

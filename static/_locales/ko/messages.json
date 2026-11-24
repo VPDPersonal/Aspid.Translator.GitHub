@@ -204,15 +204,6 @@
       }
     }
   },
-  "tooltipError": {
-    "message": "번역 실패: $ERROR$",
-    "description": "Tooltip of a title that failed to translate.",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "sourceUnknown": {
     "message": "원문",
     "description": "Stands for the source language when it is unknown."

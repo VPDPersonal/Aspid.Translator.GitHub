@@ -204,15 +204,6 @@
       }
     }
   },
-  "tooltipError": {
-    "message": "অনুবাদ ব্যর্থ হয়েছে: $ERROR$",
-    "description": "Tooltip of a title that failed to translate.",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "sourceUnknown": {
     "message": "মূল",
     "description": "Stands for the source language when it is unknown."

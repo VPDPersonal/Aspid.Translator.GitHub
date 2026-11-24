@@ -204,15 +204,6 @@
       }
     }
   },
-  "tooltipError": {
-    "message": "Ошибка перевода: $ERROR$",
-    "description": "Tooltip of a title that failed to translate.",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "sourceUnknown": {
     "message": "оригинал",
     "description": "Stands for the source language when it is unknown."
