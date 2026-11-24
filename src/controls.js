@@ -188,7 +188,7 @@ function titlePosition(root, titleKind) {
     const visible = [actions, context].find(row => row?.getClientRects().length);
     if (visible) {
       const parent = visible.querySelector('[class*="menuActionsContainer"]') ?? visible;
-      const createIssue = parent.querySelector('a[href*="/issues/new"], [data-testid="new-issue-button"]');
+      const createIssue = parent.querySelector('a[href*="/issues/new"], [data-testid="new-issue-button"], button[data-variant="primary"]');
       return {
         parent,
         before: (createIssue && branch(createIssue, parent)) ?? parent.firstChild,

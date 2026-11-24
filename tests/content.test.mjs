@@ -903,13 +903,13 @@ test('Issues translate both headings, the innermost rendered body and comments w
 });
 
 test('the Issue title action matches New issue in the visible actions row', async () => {
-  const menu = '<div class="menuActionsContainer__test"><div class="create"><a href="/owner/repo/issues/new/choose">New issue</a></div><button>Copy link</button></div>';
-  const context = `<div data-component="PageHeader.ContextAreaActions">${menu}</div>`;
-  const actions = `<div data-component="PH_Actions">${menu}</div>`;
+  const menu = create => `<div class="menuActionsContainer__test"><div class="create">${create}</div><button>Copy link</button></div>`;
+  const context = `<div data-component="PageHeader.ContextAreaActions">${menu('<a href="/owner/repo/issues/new/choose">New issue</a>')}</div>`;
+  const actions = `<div data-component="PH_Actions">${menu('<button data-component="Button" data-variant="primary">New issue</button>')}</div>`;
   const layout = `<style>:root{--button-primary-bgColor-rest:#238636;--button-primary-borderColor-rest:#3e9b50}
     [data-component="PageHeader.ContextAreaActions"]{display:none}
     .menuActionsContainer__test{display:flex;align-items:center;gap:4px}
-    .create a{display:inline-flex;box-sizing:border-box;height:32px;border:1px solid #3e9b50;border-radius:6px;background:#238636;color:white}
+    .create :is(a,button){display:inline-flex;box-sizing:border-box;height:32px;border:1px solid #3e9b50;border-radius:6px;background:#238636;color:white}
     @media(max-width:767px){[data-component="PH_Actions"]{display:none}[data-component="PageHeader.ContextAreaActions"]{display:flex}}</style>`;
   const body = issuePage.replace('<div data-component="PH_Actions"><button>Edit</button></div>', context + actions);
   const { page, settled } = await fixture(layout + body, { path: '/owner/repo/issues/42' });
