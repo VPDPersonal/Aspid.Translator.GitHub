@@ -11,6 +11,10 @@
   vertical-align: middle;
 }
 
+.ght-control-icon {
+  margin-inline: 0;
+}
+
 .ght-control-slot[hidden] {
   display: none !important;
 }
@@ -19,7 +23,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  row-gap: 8px;
+  gap: 8px var(--base-size-4, 4px);
 }
 
 :is(.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]):has(> .ght-control-slot) > form {
@@ -28,8 +32,8 @@
 }
 
 /* GitHub already adds trailing space to each reaction in this form. */
-.comment-reactions:has(.js-pick-reaction .tmp-mr-1) > .ght-control-slot {
-  margin-inline-start: 0;
+.comment-reactions:has(> .ght-control-icon):has(.js-pick-reaction .tmp-mr-1) {
+  column-gap: 0;
 }
 
 .ght-control-footer {
@@ -61,14 +65,24 @@
   align-items: center;
 }
 
-h2:has(> .ght-control-about) {
+h2:has(> .ght-control-about),
+.js-details-container :has(> .ght-control-commit-hash) {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .ght-control-about {
   margin-inline-start: auto;
+}
+
+.ght-control-about:has(+ :is(button, a)),
+.ght-control-readme,
+.js-discussions-title-container .ght-control-action:has(+ *) {
+  margin-inline-end: var(--base-size-8, 8px);
+}
+
+.ght-control-commit-hash {
+  margin-inline-end: 0;
 }
 
 .ght-control-title-standalone {
@@ -128,7 +142,7 @@ h2:has(> .ght-control-about) {
   flex: none;
   width: 16px;
   height: 16px;
-  background: var(--ght-accent);
+  background: var(--ght-icon-color, var(--ght-accent));
   mask: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.35'%3E%3Ccircle cx='10' cy='10' r='9'/%3E%3Cellipse cx='10' cy='10' rx='4.4' ry='9'/%3E%3Cpath d='M1 10h18'/%3E%3C/svg%3E");
 }
 
@@ -145,13 +159,66 @@ h2:has(> .ght-control-about) {
 }
 
 @media (forced-colors: active) {
-  .ght-toggle::before, .ght-fab::before { --ght-accent: ButtonText; forced-color-adjust: none; }
+  .ght-toggle::before, .ght-fab::before { --ght-icon-color: ButtonText; forced-color-adjust: none; }
 }
 
 .ght-toggle:hover,
 .ght-fab:hover,
 .ght-toggle[aria-pressed="true"] {
   background: var(--bgColor-muted, #f6f8fa);
+}
+
+.ght-control-icon .ght-toggle {
+  --ght-icon-color: var(--fgColor-muted, light-dark(#59636e, #9198a1));
+  width: var(--control-small-size, 28px);
+  min-height: var(--control-small-size, 28px);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.ght-control-icon .ght-toggle-text {
+  display: none;
+}
+
+.ght-control-icon .ght-toggle[data-translated] {
+  --ght-icon-color: var(--ght-accent);
+}
+
+.ght-control-icon .ght-toggle:hover:enabled {
+  background: var(--control-transparent-bgColor-hover, var(--bgColor-muted, #f6f8fa));
+}
+
+.ght-control-readme .ght-toggle {
+  /* Match the Outline button's icon, padding, and transparent border. */
+  width: calc(16px + 2 * var(--base-size-8, 8px) + 2 * var(--borderWidth-thin, 1px));
+}
+
+.ght-control-action .ght-toggle {
+  width: var(--control-medium-size, 32px);
+  min-height: var(--control-medium-size, 32px);
+  border: 1px solid var(--button-default-borderColor-rest, var(--borderColor-default, #d1d9e0));
+  border-radius: var(--borderRadius-medium, 6px);
+  background: var(--button-default-bgColor-rest, var(--bgColor-muted, #f6f8fa));
+  box-shadow: var(--button-default-shadow-resting, none);
+}
+
+.ght-control-action .ght-toggle:hover:enabled {
+  border-color: var(--button-default-borderColor-hover, var(--borderColor-default, #d1d9e0));
+  background: var(--button-default-bgColor-hover, var(--bgColor-muted, #f6f8fa));
+}
+
+.ght-control-reaction .ght-toggle {
+  width: 26px;
+  min-height: 26px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 50%;
+  background: var(--bgColor-muted, #f6f8fa);
+}
+
+.ght-control-reaction .ght-toggle:hover:enabled {
+  background: var(--control-transparent-bgColor-hover, var(--bgColor-neutral-muted, #eff2f5));
 }
 
 .ght-toggle:focus-visible,
@@ -182,21 +249,10 @@ h2:has(> .ght-control-about) {
   text-align: center;
 }
 
-@media (max-width: 640px) {
-  .ght-control-document .ght-toggle {
-    width: 30px;
-    padding-inline: 0;
-  }
-
-  .ght-control-document .ght-toggle-text {
-    display: none;
-  }
-}
-
 @media (pointer: coarse) {
   .ght-toggle,
   .ght-fab,
-  .ght-control-header .ght-toggle {
+  :is(.ght-control-header, .ght-control-icon) .ght-toggle {
     min-width: 44px;
     min-height: 44px;
   }

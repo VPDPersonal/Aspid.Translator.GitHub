@@ -124,7 +124,7 @@ async function fixture(body, { path = '/owner/repo/pull/1', mode = 'ready', auto
 
 const title = '<div class="titleWithAction"><h1><span class="markdown-title">Hello title</span></h1><button id="edit">Edit</button></div>';
 const comment = (id = 'pullrequest-1', text = 'Hello description') => `<div class="js-comment" id="${id}"><div class="markdown-body"><p>${text}</p><code>SomeCode()</code></div><div class="comment-reactions"><form><button type="button" class="smile">Smile</button></form></div></div>`;
-const timeline = `<div class="js-details-container" id="timeline-commit"><div class="d-flex"><div class="title"><code><a class="markdown-title" href="#commit">Hello commit</a></code><button id="expand">…</button></div><div id="verified">Verified</div><div>✓</div></div><div class="Details-content--hidden" hidden><pre>Hello commit body</pre></div></div>`;
+const timeline = `<div class="js-details-container" id="timeline-commit"><div class="d-flex"><div class="title"><code><a class="markdown-title" href="/owner/repo/pull/1/commits/d9a1e8c">Hello commit</a></code><button id="expand">…</button></div><div id="verified">Verified</div><div>✓</div><div class="text-right"><a href="/owner/repo/pull/1/commits/d9a1e8c">d9a1e8c</a></div></div><div class="Details-content--hidden" hidden><pre>Hello commit body</pre></div></div>`;
 const row = id => `<li data-testid="commit-row-item" id="${id}"><div data-listview-item-title-container><h4><a href="#${id}"><span>Hello ${id}</span></a></h4></div><div><div class="extended-commit-description-container">Hello body</div></div><div class="metadata"><span class="verified">Verified</span><div class="primary d-none d-sm-flex"><a data-testid="commit-row-browse-repo" href="#browse">Browse</a></div></div></li>`;
 
 test('comment controls sit after reactions; global actions reset local choices and synchronize both PR headings', async () => {
@@ -147,12 +147,17 @@ test('comment controls sit after reactions; global actions reset local choices a
   } finally { await page.close(); }
 });
 
-test('one commit button preserves local choice when its collapsed body translates later', async () => {
+test('the PR timeline toggle follows the commit hash and keeps its choice when the body translates', async () => {
   const { page, settled } = await fixture(timeline);
   try {
     await page.waitForSelector('#timeline-commit .ght-toggle[data-state="done"]');
     await settled();
-    assert.equal(await page.$eval('#verified', el => el.previousElementSibling.classList.contains('ght-control-slot')), true);
+    assert.deepEqual(await page.$eval('#timeline-commit .ght-control-slot', el => {
+      const hash = el.previousElementSibling;
+      const link = hash.getBoundingClientRect();
+      const toggle = el.getBoundingClientRect();
+      return { hash: hash.textContent, gap: toggle.left - link.right, aligned: Math.abs(toggle.top + toggle.height / 2 - link.top - link.height / 2) < 1 };
+    }), { hash: 'd9a1e8c', gap: 8, aligned: true });
     await page.click('#timeline-commit .ght-toggle');
     await page.evaluate(() => { document.querySelector('.Details-content--hidden').hidden = false; });
     await page.waitForFunction(() => document.querySelector('.Details-content--hidden [data-ght-clone]'));
@@ -184,15 +189,25 @@ test('commit list buttons affect only their own row and sit before metadata', as
 });
 
 test('README control uses its header, restores anchors, and survives a replaced header', async () => {
-  const { page, settled } = await fixture('<div id="repository-readme"><div class="header"><nav><span class="octicon-book"></span>README</nav><div class="readmeHeaderSlot"></div><button>Outline</button></div><div><article itemprop="text" class="markdown-body"><h1 id="hello">Hello README</h1></article></div></div>', { path: '/owner/repo' });
+  const header = '<div class="header"><nav><span class="octicon-book"></span>README</nav><div class="readmeHeaderSlot"></div><button id="readme-edit" aria-label="Edit file">✎</button><button id="readme-outline" aria-label="Outline">☰</button></div>';
+  const layout = '<style>.header{display:flex;align-items:center}.header nav{flex:1}#readme-edit{width:28px;margin-inline-end:8px}#readme-outline{width:34px}</style>';
+  const { page, settled } = await fixture(`${layout}<div id="repository-readme">${header}<div><article itemprop="text" class="markdown-body"><h1 id="hello">Hello README</h1></article></div></div>`, { path: '/owner/repo' });
   try {
     await page.waitForSelector('.header .ght-toggle[data-state="done"]');
     await settled();
+    assert.equal(await page.$eval('.readmeHeaderSlot', el => el.previousElementSibling.classList.contains('ght-control-icon')), true);
+    assert.deepEqual(await page.$eval('.header', el => {
+      const center = selector => {
+        const rect = el.querySelector(selector).getBoundingClientRect();
+        return rect.left + rect.width / 2;
+      };
+      return [center('#readme-edit') - center('.ght-toggle'), center('#readme-outline') - center('#readme-edit')];
+    }), [39, 39]);
     assert.equal(await page.$$eval('#hello', els => els.length), 1);
     assert.equal(await page.$eval('#hello', el => Boolean(el.closest('[data-ght-clone]'))), true);
     await page.click('.header .ght-toggle');
     assert.equal(await page.$eval('#hello', el => Boolean(el.closest('[data-ght-clone]'))), false);
-    await page.evaluate(() => { document.querySelector('.header').outerHTML = '<div class="header"><nav><span class="octicon-book"></span>README</nav><div class="readmeHeaderSlot"></div><button>Outline</button></div>'; });
+    await page.evaluate(html => { document.querySelector('.header').outerHTML = html; }, header);
     await page.waitForSelector('.header .ght-toggle[data-state="done"]');
     assert.equal(await page.$eval('.header .ght-toggle', el => el.getAttribute('aria-pressed')), 'true');
   } finally { await page.close(); }
@@ -320,20 +335,30 @@ test('every supported UI locale provides both page-wide commands', async () => {
   }
 });
 
-test('a PR comment uses the same gap between reactions and the translation button', async () => {
+test('a PR comment matches the round reaction control and uses the same gap with or without reactions', async () => {
   const { page } = await fixture(comment());
   try {
     await page.waitForSelector('.comment-reactions .ght-toggle[data-state="done"]');
-    await page.addStyleTag({ content: '.js-pick-reaction { display: flex } .tmp-mr-1 { margin-right: 4px }' });
+    await page.addStyleTag({ content: '.smile{box-sizing:border-box;width:26px;height:26px;border-radius:50%;border:1px solid;padding:0;font-size:0}.js-pick-reaction { display: flex } .tmp-mr-1 { margin-right: 4px }' });
     const gaps = await page.$eval('.comment-reactions', row => {
+      const smile = row.querySelector('.smile');
+      const translate = row.querySelector('.ght-toggle');
+      const gap = (left, right) => right.getBoundingClientRect().left - left.getBoundingClientRect().right;
+      const withoutReaction = gap(smile, translate);
       const form = row.querySelector('form');
       form.className = 'js-pick-reaction';
-      form.firstElementChild.classList.add('tmp-mr-1');
+      smile.classList.add('tmp-mr-1');
       form.insertAdjacentHTML('beforeend', '<button class="tmp-mr-1" type="button">👀 1</button>');
-      const [smile, eyes, translate] = [...row.querySelectorAll('button')].map(button => button.getBoundingClientRect());
-      return [eyes.left - smile.right, translate.left - eyes.right];
+      const eyes = form.lastElementChild;
+      return [withoutReaction, gap(smile, eyes), gap(eyes, translate)];
     });
-    assert.deepEqual(gaps, [4, 4]);
+    assert.deepEqual(gaps, [4, 4, 4]);
+    const shape = selector => page.$eval(selector, el => {
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return [rect.width, rect.height, style.borderRadius, style.borderWidth];
+    });
+    assert.deepEqual(await shape('.ght-toggle'), await shape('.smile'));
   } finally { await page.close(); }
 });
 
@@ -343,7 +368,7 @@ test('a long reaction row wraps the translation button without overflow on narro
     await page.setViewport({ width: 320, height: 900 });
     await page.waitForSelector('.ght-toggle[data-state="done"]');
     await settled();
-    await page.addStyleTag({ content: '.comment-reactions form{display:flex;flex-wrap:wrap;gap:6px} .smile{width:40px}' });
+    await page.addStyleTag({ content: '.comment-reactions form{display:flex;flex-wrap:wrap;gap:6px}.comment-reactions form button{width:70px}' });
     await page.evaluate(() => {
       document.querySelector('.comment-reactions form').insertAdjacentHTML('beforeend', '<button type="button">👍 12</button><button type="button">❤️ 42</button><button type="button">🎉 17</button>');
     });
@@ -419,7 +444,15 @@ test('one header button switches all directory messages, independently from READ
     await page.waitForFunction(() => document.querySelectorAll('.ght-toggle[data-state="done"]').length === 2);
     await settled();
     assert.equal(await page.$$eval('#directory .ght-toggle', els => els.length), 1);
-    assert.equal(await page.$eval('.history-desktop', el => el.previousElementSibling.classList.contains('ght-control-slot')), true);
+    assert.equal(await page.$eval('.history', el => el.lastElementChild.classList.contains('ght-control-icon')), true);
+    const controlStyle = () => page.$eval('#directory-header .ght-toggle', el => ({
+      border: getComputedStyle(el).borderWidth,
+      background: getComputedStyle(el).backgroundColor,
+      icon: getComputedStyle(el, '::before').backgroundColor,
+      label: getComputedStyle(el.querySelector('.ght-toggle-text')).display,
+    }));
+    await page.addStyleTag({ content: ':root{color-scheme:dark;--fgColor-muted:#9198a1}' });
+    assert.deepEqual(await controlStyle(), { border: '0px', background: 'rgba(0, 0, 0, 0)', icon: 'rgb(92, 180, 107)', label: 'none' });
     assert.equal(await page.$$eval('.react-directory-row .ght-toggle', els => els.length), 0);
     assert.equal(await page.$$eval('#directory [data-ght-clone]', els => els.length), 3);
     assert.match(await page.$eval('#README\\.md .react-directory-row-commit-cell [data-ght-clone]', el => el.textContent), /^feat\(scope\)!: Привет file \(#304\)$/);
@@ -428,6 +461,10 @@ test('one header button switches all directory messages, independently from READ
     assert.deepEqual(preserved, [{ name: 'README.md', date: '2 weeks ago' }, { name: 'src', date: '2 weeks ago' }]);
     assert.equal(await page.$eval('[data-testid="latest-commit-details"]', el => el.textContent), '1234567last week');
     await page.click('#directory-header .ght-toggle');
+    await page.mouse.move(0, 0);
+    assert.equal((await controlStyle()).icon, 'rgb(145, 152, 161)');
+    await page.addStyleTag({ content: ':root{color-scheme:light;--fgColor-muted:#59636e}' });
+    assert.equal((await controlStyle()).icon, 'rgb(89, 99, 110)');
     assert.equal(await page.$$eval('#directory [data-ght-clone]', els => els.every(el => el.hasAttribute('data-ght-hidden'))), true);
     assert.equal(await page.$eval('#readme [data-ght-clone]', el => el.hasAttribute('data-ght-hidden')), false);
     await page.click('.ght-fab');
@@ -493,20 +530,27 @@ test('disabling commit titles removes table translations and its control while l
 const prActionHeader = `<div id="pr-header" data-component="PageHeader"><div data-component="TitleArea"><div class="titleWithAction"><h1><span class="markdown-title">docs(website): Hello Ko-fi donation card and a Sponsor button</span></h1><span class="titleSuffix">#562</span><button id="edit">Edit</button></div></div><div data-component="PH_Actions"><a id="overview" href="#overview">Try the Overview page</a><button>Merge status</button><button>Code</button></div></div><h2 class="PageHeader-Title"><a><span class="markdown-title">docs(website): Hello Ko-fi donation card and a Sponsor button</span></a></h2>`;
 const prHeaderLayout = `[data-component="PageHeader"]{display:grid;grid-template-areas:"title-area actions";grid-template-columns:minmax(0,1fr) auto;gap:12px}[data-component="TitleArea"]{grid-area:title-area;min-width:0}.titleWithAction h1{display:inline;font-size:24px;font-weight:400;margin:0}.titleSuffix{font-size:24px;color:gray}[data-component="PH_Actions"]{grid-area:actions;display:flex;align-items:center;gap:8px;align-self:start;height:32px}[data-component="PH_Actions"]>a,[data-component="PH_Actions"]>button{font-size:12px;white-space:nowrap}@media(max-width:640px){[data-component="PageHeader"]{--grid-row-order-actions:1;grid-template-areas:"actions" "title-area";grid-template-columns:minmax(0,1fr)}[data-component="PH_Actions"]{flex-wrap:wrap;height:auto;justify-content:flex-end;grid-row:var(--grid-row-order-actions)}}`;
 
-test('PR title button sits before Overview in the actions row, with a square GitHub-style shape', async () => {
+test('the PR title action sits after Overview and matches the native action buttons', async () => {
   const { page, settled } = await fixture(prActionHeader);
   try {
-    await page.addStyleTag({ content: prHeaderLayout });
+    await page.addStyleTag({ content: prHeaderLayout + `
+      #pr-header{--button-default-bgColor-rest:#212830;--button-default-borderColor-rest:#3d444d}
+      [data-component="PH_Actions"]>button{height:32px;border:1px solid #3d444d;border-radius:6px;background:#212830}
+    ` });
     await page.waitForSelector('[data-component="PH_Actions"] .ght-toggle[data-state="done"]');
     await settled();
     assert.equal(await page.$$eval('.titleWithAction .ght-toggle', els => els.length), 0);
-    assert.equal(await page.$eval('#overview', el => el.previousElementSibling.classList.contains('ght-control-title')), true);
+    assert.deepEqual(await page.$eval('#overview', el => [
+      el.nextElementSibling.classList.contains('ght-control-title'),
+      el.nextElementSibling.nextElementSibling.textContent,
+    ]), [true, 'Merge status']);
     assert.equal(await page.$$eval('.ght-control-title', els => els.length), 1);
-    const style = await page.$eval('.ght-control-title .ght-toggle', el => {
+    const shape = selector => page.$eval(selector, el => {
       const rect = el.getBoundingClientRect();
-      return { width: rect.width, height: rect.height, radius: getComputedStyle(el).borderRadius };
+      const { borderWidth, borderColor, borderRadius, backgroundColor } = getComputedStyle(el);
+      return { height: rect.height, borderWidth, borderColor, borderRadius, backgroundColor };
     });
-    assert.deepEqual(style, { width: 32, height: 32, radius: '6px' });
+    assert.deepEqual(await shape('.ght-control-title .ght-toggle'), await shape('[data-component="PH_Actions"] > button'));
     await page.click('.ght-control-title .ght-toggle');
     assert.equal(await page.$$eval('.markdown-title:not([data-ght-clone])', els => els.every(el => !el.hasAttribute('data-ght-hidden'))), true);
     await page.click('.ght-fab');
@@ -578,17 +622,25 @@ test('the PR title action keeps a square 44px touch target', async () => {
 });
 
 const aboutDescription = 'Aspid.MVVM is a powerful, high-performance MVVM framework for Unity.';
-const aboutSection = `<div id="about" class="sidebarSection__test"><h2><span>About</span><button id="edit-about" type="button">Settings</button></h2><p class="description__test">${aboutDescription}</p><div class="websiteRow"><a id="website" href="https://vpd-inc.gitbook.io/aspid.mvvm/">vpd-inc.gitbook.io/aspid.mvvm/</a></div><div class="topics"><a href="/topics/unity">unity</a><a href="/topics/mvvm">mvvm</a></div></div>`;
+const aboutSection = `<div id="about" class="sidebarSection__test"><h2><span class="about-heading"><span>About</span><button id="edit-about" type="button">Settings</button></span></h2><p class="description__test">${aboutDescription}</p><div class="websiteRow"><a id="website" href="https://vpd-inc.gitbook.io/aspid.mvvm/">vpd-inc.gitbook.io/aspid.mvvm/</a></div><div class="topics"><a href="/topics/unity">unity</a><a href="/topics/mvvm">mvvm</a></div></div>`;
 
 test('About translates independently with a header button, preserving names, website, topics and native settings', async () => {
-  const { page, settled } = await fixture(aboutSection + readme, { path: '/owner/repo' });
+  const layout = '<style>#about{width:280px}.about-heading{display:flex;align-items:center;justify-content:space-between;width:100%}</style>';
+  const { page, settled } = await fixture(layout + aboutSection + readme, { path: '/owner/repo' });
   try {
     await page.waitForFunction(() => document.querySelectorAll('.ght-toggle[data-state="done"]').length === 2);
     await settled();
-    assert.equal(await page.$eval('#edit-about', el => el.previousElementSibling.classList.contains('ght-control-about')), true);
+    assert.equal(await page.$eval('#edit-about', el => el.previousElementSibling.classList.contains('ght-control-icon')), true);
+    assert.deepEqual(await page.$eval('.about-heading', el => {
+      const heading = el.getBoundingClientRect();
+      const label = el.firstElementChild.getBoundingClientRect();
+      const gear = el.lastElementChild.getBoundingClientRect();
+      const globe = el.querySelector('.ght-toggle').getBoundingClientRect();
+      return { start: label.left - heading.left, end: heading.right - gear.right, gap: gear.left - globe.right };
+    }), { start: 0, end: 0, gap: 8 });
     assert.match(await page.$eval('#about [data-ght-clone]', el => el.textContent), /^Aspid\.MVVM — мощный.*MVVM framework for Unity\.$/);
     const metadata = await page.$eval('#about', el => ({
-      heading: el.querySelector('h2 > span').textContent,
+      heading: el.querySelector('.ght-control-about').previousElementSibling.textContent,
       website: el.querySelector('#website').textContent,
       url: el.querySelector('#website').href,
       topics: [...el.querySelectorAll('.topics a')].map(a => a.textContent),
@@ -757,14 +809,14 @@ test('Issues translate both headings, the innermost rendered body and comments w
     assert.equal(await page.$eval('pre', el => el.textContent), 'source code stays Hello');
     assert.equal(await page.$eval('code', el => el.textContent), 'runner.import()');
     assert.equal(await page.$$eval('form [data-ght-clone], form .ght-toggle', els => els.length), 0);
-    assert.equal(await page.$$eval('[data-component="PH_Actions"] .ght-toggle', els => els.length), 0);
-    assert.equal(await page.$eval('h1 .ght-toggle', el => el.closest('[class*="issueNumberText"]').firstChild.textContent.trim()), '#42');
+    assert.equal(await page.$$eval('h1 .ght-toggle', els => els.length), 0);
+    assert.equal(await page.$eval('h1 [class*="issueNumberText"]', el => el.textContent.trim()), '#42');
     assert.equal(await page.$eval('[data-testid="issue-body"] .ght-control-slot', el => el.parentElement.getAttribute('aria-label')), 'Reactions');
     assert.equal(await page.$eval('[data-testid="issue-body"] .ght-control-slot', el => el.previousElementSibling.className), 'smile');
     await page.click('#issue-comment .ght-toggle');
     assert.equal(await page.$eval('#issue-comment [data-ght-clone]', el => el.hasAttribute('data-ght-hidden')), true);
     assert.equal(await page.$eval('[data-testid="issue-body"] [data-ght-clone]', el => el.hasAttribute('data-ght-hidden')), false);
-    await page.click('h1 .ght-toggle');
+    await page.click('[data-component="PH_Actions"] .ght-toggle');
     assert.equal(await page.$$eval('[data-testid="issue-title"], [data-testid="issue-title-sticky"]', els => els.every(el => !el.hasAttribute('data-ght-hidden'))), true);
     await page.click('.ght-fab');
     await page.click('.ght-fab');
@@ -772,53 +824,67 @@ test('Issues translate both headings, the innermost rendered body and comments w
   } finally { await page.close(); }
 });
 
-test('Issue and Discussion title controls follow the number at wide and narrow widths and survive its replacement', async () => {
-  const longTitle = 'Hello module runner imports during a full reload with old and new module instances '.repeat(2);
-  for (const kind of ['issue', 'discussion']) {
-    const text = kind === 'issue' ? `<bdi data-testid="issue-title">${longTitle}</bdi>` : `<span class="js-issue-title">${longTitle}</span>`;
-    const numberClass = kind === 'issue' ? 'issueNumberText__test' : 'gh-header-number';
-    const { page, settled } = await fixture(`<style>h1{font-size:32px;line-height:36px;font-weight:400;margin:0}main{max-width:100%}</style><main><div data-component="PageHeader" class="gh-header"><h1 class="gh-header-title">${text}<span class="${numberClass}"> #24046</span></h1><div data-component="PH_Actions" class="gh-header-actions"><button>Edit</button></div></div></main>`, { path: `/owner/repo/${kind === 'issue' ? 'issues' : 'discussions'}/24046` });
-    try {
-      await page.waitForSelector('h1 .ght-toggle[data-state="done"]');
+test('the Issue title icon follows the visible actions row and precedes New issue', async () => {
+  const menu = '<div class="menuActionsContainer__test"><div class="create"><a href="/owner/repo/issues/new/choose">New issue</a></div><button>Copy link</button></div>';
+  const context = `<div data-component="PageHeader.ContextAreaActions">${menu}</div>`;
+  const actions = `<div data-component="PH_Actions">${menu}</div>`;
+  const layout = `<style>[data-component="PageHeader.ContextAreaActions"]{display:none}.menuActionsContainer__test{display:flex;align-items:center;gap:4px}@media(max-width:767px){[data-component="PH_Actions"]{display:none}[data-component="PageHeader.ContextAreaActions"]{display:flex}}</style>`;
+  const body = issuePage.replace('<div data-component="PH_Actions"><button>Edit</button></div>', context + actions);
+  const { page, settled } = await fixture(layout + body, { path: '/owner/repo/issues/42' });
+  try {
+    for (const [width, component] of [[1280, 'PH_Actions'], [375, 'PageHeader.ContextAreaActions'], [1280, 'PH_Actions']]) {
+      await page.setViewport({ width, height: 900 });
+      const selector = `[data-component="${component}"] .ght-toggle`;
+      await page.waitForSelector(selector + '[data-state="done"]', { visible: true });
       await settled();
-      for (const width of [1280, 375]) {
-        await page.setViewport({ width, height: 900 });
-        const layout = await page.$eval('h1', heading => {
-          const control = heading.querySelector('.ght-toggle').getBoundingClientRect();
-          const number = heading.querySelector('[class*="issueNumberText"], .gh-header-number');
-          const range = document.createRange();
-          range.selectNodeContents(number.firstChild);
-          const text = range.getBoundingClientRect();
-          return { gap: control.left - text.right, offset: Math.abs(control.top + control.height / 2 - text.top - text.height / 2), right: control.right, edge: heading.getBoundingClientRect().right, top: control.top, headingTop: heading.getBoundingClientRect().top };
-        });
-        assert.ok(layout.gap >= 6 && layout.gap <= 10, `${kind} ${width}: button follows number`);
-        assert.ok(layout.offset <= 8, `${kind} ${width}: button stays on the number's line`);
-        assert.ok(layout.right <= layout.edge + 1, `${kind} ${width}: no overflow`);
-        assert.ok(layout.top > layout.headingTop + 30, `${kind} ${width}: button follows the wrapped title`);
-      }
-      assert.equal(await page.$$eval('[data-component="PH_Actions"] .ght-toggle', els => els.length), 0);
-      await page.click('h1 .ght-toggle');
-      await page.evaluate(numberClass => {
-        document.querySelector(`.${numberClass}`).outerHTML = `<span class="${numberClass}"> #24046</span>`;
-      }, numberClass);
-      await page.waitForSelector(`.${numberClass} .ght-toggle[aria-pressed="true"]`);
-      assert.equal(await page.$$eval('.ght-toggle', els => els.length), 1);
-    } finally { await page.close(); }
-  }
+      assert.equal(await page.$eval(selector, el => el.parentElement.nextElementSibling.className), 'create');
+      assert.equal(await page.$$eval('.ght-control-title', els => els.length), 1);
+      if (width === 375) await page.click(selector);
+    }
+    assert.equal(await page.$eval('.ght-control-title .ght-toggle', el => el.getAttribute('aria-pressed')), 'true');
+  } finally { await page.close(); }
 });
 
-test('modern Issue reaction rows keep the control after the smile button when GitHub replaces the toolbar', async () => {
+test('the Discussion title control sits beside Edit and survives an action row replacement', async () => {
+  const layout = '<style>.gh-header-actions{display:flex;align-items:center;justify-content:flex-end}</style>';
+  const actions = '<div class="gh-header-actions"><button>Subscribe</button><span><button class="js-details-target">Edit</button></span></div>';
+  const { page, settled } = await fixture(`${layout}<main><div class="gh-header js-discussions-title-container"><h1 class="gh-header-title"><span class="js-issue-title">Hello discussion headline</span><span class="gh-header-number"> #24046</span></h1>${actions}</div></main>`, { path: '/owner/repo/discussions/24046' });
+  try {
+    const toggle = '.gh-header-actions .ght-toggle';
+    await page.waitForSelector(toggle + '[data-state="done"]');
+    await settled();
+    assert.equal(await page.$$eval('h1 .ght-toggle', els => els.length), 0);
+    for (const width of [1280, 375]) {
+      await page.setViewport({ width, height: 900 });
+      const placement = await page.$eval(toggle, el => {
+        const button = el.getBoundingClientRect();
+        const edit = el.parentElement.nextElementSibling.firstElementChild;
+        return { neighbour: edit.textContent, gap: edit.getBoundingClientRect().left - button.right, visible: button.width > 0 && button.right <= innerWidth };
+      });
+      assert.deepEqual(placement, { neighbour: 'Edit', gap: 8, visible: true }, `width ${width}`);
+    }
+    await page.click(toggle);
+    await page.evaluate(html => { document.querySelector('.gh-header-actions').outerHTML = html; }, actions);
+    await page.waitForSelector(toggle + '[aria-pressed="true"]');
+    assert.equal(await page.$$eval('.ght-toggle', els => els.length), 1);
+  } finally { await page.close(); }
+});
+
+test('modern Issue reaction rows match native button spacing when GitHub replaces the toolbar', async () => {
   const { page, settled } = await fixture(issuePage, { path: '/owner/repo/issues/42' });
   try {
     await page.waitForSelector('[data-testid="issue-body"] [role="toolbar"] .ght-toggle[data-state="done"]');
     await settled();
     await page.click('[data-testid="issue-body"] .ght-toggle');
     await page.evaluate(() => {
-      document.querySelector('[data-testid="issue-body"] [role="toolbar"]').outerHTML = '<div role="toolbar" aria-label="Reactions"><button>Add artifact</button><button class="smile">Smile</button></div>';
+      document.querySelector('[data-testid="issue-body"] [role="toolbar"]').outerHTML = '<div role="toolbar" aria-label="Reactions"><button class="smile">Smile</button><button class="thumbs">👍 4</button></div>';
     });
     await page.waitForSelector('[data-testid="issue-body"] [role="toolbar"] .ght-toggle[aria-pressed="true"]');
     assert.equal(await page.$$eval('[data-testid="issue-body"] .ght-toggle', els => els.length), 1);
-    assert.equal(await page.$eval('[data-testid="issue-body"] .ght-control-slot', el => el.previousElementSibling.className), 'smile');
+    assert.deepEqual(await page.$eval('[data-testid="issue-body"] [role="toolbar"]', row => {
+      const [smile, reaction, toggle] = [...row.querySelectorAll('button')].map(el => el.getBoundingClientRect());
+      return [reaction.left - smile.right, toggle.left - reaction.right];
+    }), [4, 4]);
     await page.setViewport({ width: 375, height: 900 });
     assert.equal(await page.$eval('[data-testid="issue-body"] [role="toolbar"]', el => {
       const row = el.getBoundingClientRect();
@@ -939,8 +1005,7 @@ test('discussion bodies, accepted answers and nested replies keep independent lo
     await page.click('#accepted-answer .ght-toggle');
     assert.equal(await page.$eval('#accepted-answer [data-ght-clone]', el => el.hasAttribute('data-ght-hidden')), true);
     assert.equal(await page.$eval('#nested-reply [data-ght-clone]', el => el.hasAttribute('data-ght-hidden')), false);
-    assert.equal(await page.$eval('.gh-header-number .ght-toggle', el => el.getAttribute('aria-label').startsWith('Discussions:')), true);
-    assert.equal(await page.$$eval('.gh-header-actions .ght-toggle', els => els.length), 0);
+    assert.equal(await page.$eval('.gh-header-actions .ght-toggle', el => el.getAttribute('aria-label').startsWith('Discussions:')), true);
     await page.click('.ght-fab');
     await page.click('.ght-fab');
     assert.equal(await page.$$eval('[data-ght-clone]', els => els.every(el => !el.hasAttribute('data-ght-hidden'))), true);
