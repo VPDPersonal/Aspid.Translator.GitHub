@@ -6,8 +6,8 @@ import {
 } from './dom.js';
 import { createLanguageDetector, onDownloadProgress, prepareDetector } from './page-bridge.js';
 import { getProvider } from './providers/index.js';
-import { ABOUT_SELECTOR, controlScope, createControl, directoryMessages, placeControl, removeControl } from './controls.js';
-import { FEED_CARD, PR_TITLES, REFERENCED_COMMIT, extraTargets, feedContent, pageOf } from './pages.js';
+import { ABOUT_SELECTOR, FILE_COMMIT_TITLE, controlScope, createControl, directoryMessages, fileCommitMessages, placeControl, removeControl } from './controls.js';
+import { FEED_CARD, FEED_TITLE_LINK, PR_TITLES, REFERENCED_COMMIT, extraTargets, feedContent, homeTitles, pageOf } from './pages.js';
 
 const README_SELECTOR = 'article.markdown-body[itemprop="text"], #readme .markdown-body';
 const EXCLUDE_SELECTOR = [
@@ -26,7 +26,7 @@ const TARGETS = [
   {
     mode: 'inline',
     kind: 'commitTitles',
-    find: directoryMessages,
+    find: () => [...directoryMessages(), ...fileCommitMessages()],
   },
   {
     mode: 'inline',
@@ -142,7 +142,10 @@ async function translateElement(job) {
   const { signal } = job.controller;
   signal.throwIfAborted();
   const clone = cloneForTranslation(job.el);
-  const segments = job.mode === 'plain' ? collectPlainSegments(clone) : collectSegments(clone);
+  const proseLink = job.el.matches(FILE_COMMIT_TITLE) ? 'a[href*="/commit/"]'
+    : job.kind === 'feed' ? FEED_TITLE_LINK : null;
+  const segments = job.mode === 'plain' ? collectPlainSegments(clone)
+    : collectSegments(clone, proseLink ? el => el.matches(proseLink) : null);
   if (job.mode === 'inline') segments.forEach(protectPrefix);
 
   const batches = await groupBySource(segments, provider, target, signal);
@@ -564,9 +567,10 @@ function stop() {
 function syncFab() {
   const visible = state.pageKey
     && (state.pageAlways || (state.settings.parts.readme && document.querySelector(README_SELECTOR))
-      || (state.settings.parts.commitTitles && directoryMessages().length)
+      || (state.settings.parts.commitTitles && (directoryMessages().length || fileCommitMessages().length))
       || (state.settings.parts.about && document.querySelector(ABOUT_SELECTOR))
-      || (state.settings.parts.feed && ['home', 'feed'].includes(state.pageKind) && feedContent().length));
+      || (state.settings.parts.feed && ['home', 'feed'].includes(state.pageKind)
+        && (feedContent().length || (state.pageKind === 'home' && homeTitles().length))));
   if (visible) ensureFab();
   else removeFab();
 }
@@ -690,6 +694,6 @@ function applySettings(settings) {
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);
   window.addEventListener('resize', () => {
-    if (state.active && pageOf(location.pathname)?.kind === 'issue') scheduleMaintain();
+    if (state.active && (state.pageKind === 'issue' || fileCommitMessages().length)) scheduleMaintain();
   });
 })();

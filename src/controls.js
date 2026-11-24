@@ -1,9 +1,12 @@
-import { DISCUSSION_TITLE, FEED_CARD, ISSUE_TITLE, PR_MAIN_TITLE, REFERENCED_COMMIT, listScope, pageOf, releaseScope, releaseTitles, wikiScope } from './pages.js';
+import { DISCUSSION_TITLE, ISSUE_TITLE, PR_MAIN_TITLE, REFERENCED_COMMIT, listScope, pageOf, releaseScope, releaseTitles, wikiScope } from './pages.js';
 
 const COMMENT = '.js-comment, .timeline-comment, .review-comment, .discussion-comment, .react-issue-body, [id^="discussion_r"], [data-testid="issue-body"], [data-testid="issue-comment"], [data-testid="comment-viewer-outer-box"], [data-testid="comment-viewer-container"], [class*="ReviewComment"]';
 const REACTIONS = '.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]';
 const COMMIT = `${REFERENCED_COMMIT}, [data-testid="commit-row-item"], .js-details-container, [class*="commitMessageContainer"]`;
 const DIRECTORY_TABLE = 'table[aria-labelledby="folders-and-files"], table:has(.react-directory-row)';
+const LATEST_COMMIT = '[data-testid="latest-commit"]';
+const LATEST_COMMIT_DETAILS = '[data-testid="latest-commit-details"]';
+export const FILE_COMMIT_TITLE = `${LATEST_COMMIT} [data-testid="latest-commit-html"]`;
 const COMMIT_LINK = /\/commit\/[0-9a-f]{7,40}(?:[?#/]|$)/i;
 const COMMIT_HASH = /^[0-9a-f]{7,40}$/i;
 export const ABOUT_SELECTOR = '[class*="sidebarSection"] > p[class*="description"], .BorderGrid-cell > p.f4.my-3';
@@ -11,7 +14,7 @@ export const ABOUT_SELECTOR = '[class*="sidebarSection"] > p[class*="description
 function directoryHeader(table) {
   for (let parent = table.parentElement, depth = 0; parent && parent !== document.body && depth < 4; parent = parent.parentElement, depth++) {
     for (const child of parent.children) {
-      if (!child.contains(table) && child.querySelector('[data-testid="latest-commit-details"], .octicon-history')) return child;
+      if (!child.contains(table) && child.querySelector(`${LATEST_COMMIT_DETAILS}, .octicon-history`)) return child;
     }
   }
   return null;
@@ -20,7 +23,7 @@ function directoryHeader(table) {
 function isCommitMessage(el) {
   const text = el.textContent.trim();
   return COMMIT_LINK.test(el.getAttribute('href') ?? '') && text && !COMMIT_HASH.test(text)
-    && !el.closest('[data-ght-clone], [data-ght-ui], [data-testid="latest-commit-details"]');
+    && !el.closest(`[data-ght-clone], [data-ght-ui], ${LATEST_COMMIT_DETAILS}`);
 }
 
 export function directoryMessages() {
@@ -33,6 +36,10 @@ export function directoryMessages() {
   return messages;
 }
 
+export function fileCommitMessages() {
+  return /^\/[^/]+\/[^/]+\/blob\//.test(location.pathname) ? document.querySelectorAll(FILE_COMMIT_TITLE) : [];
+}
+
 function directoryTable(el) {
   if (!el.matches('a[href]')) return null;
   const table = el.closest(DIRECTORY_TABLE);
@@ -43,8 +50,7 @@ function directoryTable(el) {
   return null;
 }
 
-function directoryPosition(table) {
-  const header = directoryHeader(table);
+function historyPosition(header) {
   if (!header) return null;
   const links = [...header.querySelectorAll('a[href*="/commits/"]')];
   if (!links.length) return { parent: header, appearance: 'icon' };
@@ -64,7 +70,7 @@ export function controlScope(el, kind) {
   if (kind === 'lists') return { root: listScope(el), kind: 'collection', local: false };
   if (kind === 'releases') return { root: releaseScope(el), kind: 'release' };
   if (kind === 'wiki') return { root: wikiScope(el), kind: 'wiki', local: false };
-  if (kind === 'feed') return { root: el.closest(FEED_CARD) ?? el.parentElement, kind: 'feedcard' };
+  if (kind === 'feed') return { root: document.body, kind: 'collection', local: false };
   if ((kind === 'issues' && el.matches(ISSUE_TITLE)) || (kind === 'discussions' && el.matches(DISCUSSION_TITLE))) {
     const title = kind === 'issues'
       ? document.querySelector('[data-testid="issue-title"], h1 .js-issue-title') ?? el
@@ -74,6 +80,7 @@ export function controlScope(el, kind) {
   if (kind === 'commitTitles' || kind === 'commitBodies') {
     const table = kind === 'commitTitles' && directoryTable(el);
     if (table) return { root: table, kind: 'directory' };
+    if (el.matches(FILE_COMMIT_TITLE)) return { root: el.closest(LATEST_COMMIT), kind: 'commit' };
     return { root: el.closest(COMMIT) ?? el.parentElement, kind: 'commit' };
   }
   if (kind === 'prTitle') {
@@ -95,7 +102,10 @@ function branch(node, parent) {
 function documentHeader(el) {
   const blob = el.closest('[class*="blobContainer"], .file');
   const actions = blob?.querySelector('.react-blob-header-edit-and-raw-actions');
-  if (actions) return { parent: actions.parentElement, before: actions };
+  if (actions) {
+    const parent = actions.parentElement;
+    return { parent, before: parent.firstElementChild, appearance: 'action', fileAction: true };
+  }
   const classic = el.closest('#readme')?.querySelector('.Box-header');
   if (classic) return { parent: classic };
   // Repository tabs and their actions are siblings of the rendered README.
@@ -111,6 +121,13 @@ function documentHeader(el) {
 }
 
 function commitPosition(root, el) {
+  if (root.matches(LATEST_COMMIT)) {
+    const header = root.querySelector(LATEST_COMMIT_DETAILS) ? root : root.parentElement;
+    const actions = document.querySelector('.react-blob-header-edit-and-raw-actions')?.parentElement;
+    const outline = actions?.querySelector('.octicon-list-unordered')?.closest('button');
+    const endMargin = outline?.getClientRects().length ? getComputedStyle(outline).marginInlineEnd : '';
+    return { ...historyPosition(header), endMargin };
+  }
   if (root.matches(REFERENCED_COMMIT)) {
     const actions = root.querySelector('[class*="commitActions"]');
     return {
@@ -130,7 +147,7 @@ function commitPosition(root, el) {
   if (root.matches('[data-testid="commit-row-item"]')) {
     const actions = root.querySelector('[data-testid="commit-row-browse-repo"]');
     const metadata = actions && branch(actions, root);
-    if (metadata) return { parent: metadata, before: metadata.firstChild };
+    if (metadata) return { parent: metadata, appearance: 'icon' };
   }
   if (root.matches('.js-details-container')) {
     const row = root.closest('.js-commits-list-item');
@@ -144,9 +161,9 @@ function commitPosition(root, el) {
     const line = title?.parentElement.parentElement;
     if (line) {
       const hash = [...line.querySelectorAll('a[href*="/commit/"], a[href*="/commits/"]')].find(link =>
-        COMMIT_HASH.test(link.textContent.trim()) && !link.closest('code, [data-ght-clone]'));
-      if (hash) return { parent: hash.parentElement, before: hash.nextSibling, commitHash: true };
-      return { parent: line, before: title.parentElement.nextSibling };
+        COMMIT_HASH.test(link.textContent.trim()) && !title.contains(link) && !link.closest('[data-ght-clone]'));
+      const anchor = hash?.closest('code') ?? hash;
+      return { parent: anchor?.parentElement ?? line, appearance: 'icon', commitHash: true };
     }
   }
   const title = root.querySelector('h1, h2, h4') ?? el;
@@ -162,7 +179,7 @@ function titlePosition(root, titleKind) {
     if (actions && getComputedStyle(actions).display !== 'none') {
       const edit = [...actions.querySelectorAll(':is(button, a):not([data-ght-ui] *)')].find(node =>
         node.matches('.js-details-target, [aria-label="Edit title"], a[href$="/edit"]') || node.textContent.trim() === 'Edit');
-      return { parent: actions, before: (edit && branch(edit, actions)) ?? actions.firstChild, appearance: 'action' };
+      return { parent: edit?.parentElement ?? actions, before: edit ?? actions.firstChild, appearance: 'action', discussionControl: Boolean(edit) };
     }
     const number = root.querySelector('.gh-header-number');
     return { parent: number ?? root, compact: true, inlineTitle: true };
@@ -174,8 +191,12 @@ function titlePosition(root, titleKind) {
     const visible = [actions, context].find(row => row?.getClientRects().length);
     if (visible) {
       const parent = visible.querySelector('[class*="menuActionsContainer"]') ?? visible;
-      const createIssue = parent.querySelector('a[href*="/issues/new"], [data-testid="new-issue-button"]');
-      return { parent, before: (createIssue && branch(createIssue, parent)) ?? parent.firstChild, appearance };
+      const createIssue = parent.querySelector('a[href*="/issues/new"], [data-testid="new-issue-button"], button[data-variant="primary"]');
+      return {
+        parent,
+        before: (createIssue && branch(createIssue, parent)) ?? parent.firstChild,
+        appearance: 'action',
+      };
     }
   }
   if (actions && !actions.hidden && getComputedStyle(actions).display !== 'none') {
@@ -199,7 +220,7 @@ function titlePosition(root, titleKind) {
 function position(group) {
   const el = [...group.jobs][0]?.el;
   if (!el) return null;
-  if (group.kind === 'directory') return directoryPosition(group.root);
+  if (group.kind === 'directory') return historyPosition(directoryHeader(group.root));
   if (group.kind === 'release') {
     const title = releaseTitles(group.root)[0];
     const body = title?.closest('.Box-body');
@@ -213,10 +234,6 @@ function position(group) {
       return { parent, before: action && branch(action, parent), compact: true, headerControl: true, releaseControl: true };
     }
   }
-  if (group.kind === 'feedcard') {
-    const actions = group.root.querySelector('.feed-actions, [data-testid="feed-actions"]');
-    return { parent: group.root, before: actions && branch(actions, group.root), footer: true };
-  }
   if (group.kind === 'title') return titlePosition(group.root, group.titleKind);
   if (group.kind === 'commit') return { ...commitPosition(group.root, el), compact: true };
   if (group.kind === 'about') {
@@ -226,12 +243,17 @@ function position(group) {
   }
   if (group.kind === 'document') {
     const header = documentHeader(el);
-    if (header) return { ...header, appearance: 'icon' };
+    if (header) return { appearance: 'icon', ...header };
   }
   if (group.kind === 'comment') {
     const reactions = [...group.root.querySelectorAll(REACTIONS)]
       .find(node => !node.closest('form, [data-ght-clone], .markdown-body') && node.closest(COMMENT) === group.root);
-    if (reactions) return { parent: reactions, appearance: 'reaction' };
+    if (reactions) {
+      const options = reactions.querySelector(':scope > .js-pick-reaction > .js-comment-reactions-options');
+      const last = options && [...options.children].findLast(node =>
+        !node.hasAttribute('data-ght-ui') && node.getBoundingClientRect().width > 0);
+      return { parent: options ?? reactions, before: last?.nextSibling, appearance: 'reaction' };
+    }
   }
   // Older comment layouts and documents without a toolbar use a quiet footer.
   const anchor = el.tagName === 'TD' ? el.closest('table') ?? el : el;
@@ -267,6 +289,8 @@ export function placeControl(group) {
   slot.classList.toggle('ght-control-icon', Boolean(target.appearance));
   slot.classList.toggle('ght-control-action', target.appearance === 'action');
   slot.classList.toggle('ght-control-reaction', target.appearance === 'reaction');
+  slot.classList.toggle('ght-control-discussion', Boolean(target.discussionControl));
+  slot.classList.toggle('ght-control-file-action', Boolean(target.fileAction));
   slot.classList.toggle('ght-control-readme', Boolean(target.readmeToolbar));
   slot.classList.toggle('ght-control-commit-hash', Boolean(target.commitHash));
   slot.classList.toggle('ght-control-title', group.kind === 'title');
@@ -277,6 +301,7 @@ export function placeControl(group) {
   slot.classList.toggle('ght-control-release', Boolean(target.releaseControl));
   slot.classList.toggle('ght-control-compare', Boolean(target.compareControl));
   slot.classList.toggle('ght-control-reference', Boolean(target.referenceControl));
+  slot.style.marginInlineEnd = target.endMargin ?? '';
   button.classList.toggle('ght-toggle-compact', Boolean(target.compact));
   const before = target.before ?? null;
   // Avoid observing our own no-op placements as GitHub content changes.

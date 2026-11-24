@@ -53,11 +53,12 @@ function isBlock(el) {
   return el.tagName.includes('-') && el.querySelector(BLOCK_SELECTOR) !== null;
 }
 
-function isAtom(el) {
-  if (ATOM_TAGS.has(el.tagName) || el.matches(ATOM_SELECTOR)) return true;
+function isAtom(el, proseLinks) {
+  if (ATOM_TAGS.has(el.tagName)) return true;
   const text = el.textContent.trim();
   if (!hasLetters(text)) return true;
-  return el.tagName === 'A' && REF_TEXT.test(text);
+  if (el.tagName === 'A' && REF_TEXT.test(text)) return true;
+  return el.matches(ATOM_SELECTOR) && !proseLinks?.(el);
 }
 
 function collectRuns(root) {
@@ -85,13 +86,13 @@ function collectRuns(root) {
   return runs;
 }
 
-function encodeRun(run) {
+function encodeRun(run, proseLinks) {
   const tokens = [];
   const encode = (node) => {
     if (node.nodeType === Node.TEXT_NODE) return node.nodeValue;
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
     const id = tokens.length;
-    if (isAtom(node)) {
+    if (isAtom(node, proseLinks)) {
       tokens.push({ node, atom: true });
       return `<x${id}/>`;
     }
@@ -104,9 +105,9 @@ function encodeRun(run) {
 }
 
 /** Returns the segments of `root` that contain words to translate. */
-export function collectSegments(root) {
+export function collectSegments(root, proseLinks) {
   return collectRuns(root)
-    .map(encodeRun)
+    .map(run => encodeRun(run, proseLinks))
     .filter((segment) => hasLetters(stripTags(segment.text)));
 }
 
