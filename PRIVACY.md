@@ -1,53 +1,79 @@
-# Privacy Policy
+# Aspid.Translator.GitHub Privacy Policy
 
-**Aspid.Translator.GitHub**, a Chrome extension. Last updated: November 23, 2026.
+Last updated: November 24, 2026
 
-## Summary
+Aspid.Translator.GitHub is a browser extension that translates text in place on
+`github.com`. It processes page text on your device. It does not upload that
+text or its translations to the developer, GitHub, Google, or an online
+translation service.
 
-The extension does not collect, store or send any personal data. It has no servers, no analytics
-and no accounts. Text is translated on your device by Chrome.
+## What the extension accesses and why
 
-## What the extension reads
+- **GitHub page text.** The extension reads text in supported sections of the
+  GitHub pages you open, according to your translation settings. This includes
+  pull requests, issues, comments and reviews, commits, repository descriptions
+  and rendered Markdown, releases, discussions, wikis, lists, and activity
+  cards. It can process text from private repositories you can already access.
+  The text may include personal information if it appears in those sections.
+  The extension uses the text to detect its language, translate it, and display
+  the translation on that page. It does not post translations or edits to GitHub.
+- **Language preferences.** The extension reads the browser's preferred and
+  interface languages to choose a default target language. You can override
+  that choice in the extension settings.
+- **Active tab.** When you use the translation shortcut, the extension uses
+  the active tab's ID to route the command. It does not store a browsing history.
 
-On `github.com`, the extension reads the page sections you enable for translation. These
-include pull requests, issues, discussions and their comments, list titles, commit messages,
-repository descriptions, rendered Markdown, release notes, wikis and activity feed cards. That text is handed to Chrome's built-in Translator and
-LanguageDetector APIs and to its extension language detector (`chrome.i18n`), which run on your
-device. The translated text is shown on the page and is never saved or sent anywhere. Nothing is
-posted to GitHub: other people still see the original.
+## Where processing happens and what leaves the device
 
-The extension does not run on any other site.
+The extension uses Chrome's on-device Translator and Language Detector APIs
+and may fall back to Chrome's built-in extension language detector
+(`chrome.i18n.detectLanguage`). The extension passes text and results between
+its scripts in the browser on the current GitHub page to use these APIs.
+This is local processing, not a network request. Because the translation is
+displayed in the page, scripts running on that page can access the displayed
+text.
 
-## What the extension stores
+Chrome may contact Google to download the translation or language-detection
+models it needs. Chrome handles these downloads; the GitHub text submitted
+for translation and the resulting translations are not part of the download
+requests. See the [Google Chrome Privacy Notice](https://www.google.com/chrome/privacy/)
+for how Google handles Chrome requests.
 
-Your settings: the target language, whether to translate automatically and which parts of a page
-to translate. They are kept in `chrome.storage.local` on your device and never leave it.
+The extension has no backend, analytics, advertising, or extension account.
+It does not send page text, translations, or your extension preferences to the
+developer or any other remote recipient. It does not sell this data, use it for
+advertising or profiling, or provide the developer with access to your page text.
 
-## Network requests
+## Storage, retention, and controls
 
-The extension makes no network requests of its own.
+The extension keeps original and translated text in the browser while the page
+is open. It does not write that text to persistent extension storage. It uses
+`chrome.storage.local` to retain translation preferences, including the target
+language, automatic translation, which parts of the page to translate, and the
+selected translation engine (currently only Chrome's built-in engine). The
+extension does not sync these settings. Removing the extension clears its
+locally stored preferences; Chrome manages its downloaded models separately.
 
-The first time you translate a language pair, Chrome downloads a language model from Google.
-Chrome makes that request, not the extension, and the text you translate is not part of it.
-Google's handling of that download is covered by the
-[Google Chrome Privacy Notice](https://www.google.com/chrome/privacy/).
-
-## Data sharing
-
-The extension does not sell, share or transfer any data to third parties, and does not use data
-for any purpose other than showing a translation on the page you are reading.
+In the extension settings, you can turn off automatic translation, disable
+individual content types, or change the target language. You can disable or
+remove the extension in Chrome to stop it from processing pages.
 
 ## Permissions
 
-- `storage`: keeps your settings on your device.
-- Access to `https://github.com/*`: finds and translates text on GitHub pages.
+- **`storage`** saves translation preferences on your device.
+- **Site access to `https://github.com/*`** lets the extension read supported
+  page text and display the translation in place. It does not inject
+  translation scripts on other sites.
 
-## Changes
+## Chrome Web Store Limited Use
 
-If this policy changes, the new version will be published at this address with a new date.
-A future version that adds an online translation engine will say here what is sent and where,
-and that engine will stay off until you turn it on.
+Aspid.Translator.GitHub's use of user data complies with the
+[Chrome Web Store User Data Policy, including its Limited Use requirements](https://developer.chrome.com/docs/webstore/program-policies/limited-use).
 
-## Contact
+## Changes and contact
 
-Questions: [open an issue](https://github.com/VPDPersonal/Aspid.Translator.GitHub/issues).
+When this policy changes, the revised version will show a new date. For
+privacy questions, use the support contact on the Chrome Web Store listing
+once available, or [open an issue](https://github.com/VPDPersonal/Aspid.Translator.GitHub/issues)
+if you have repository access. Do not include text from private repositories
+or other sensitive information in a support request.

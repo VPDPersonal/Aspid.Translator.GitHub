@@ -465,7 +465,6 @@ function removeTranslation(job) {
   job.clone?.remove();
   job.el.removeAttribute('data-ght-source');
   setHidden(job.el, false);
-  detachGroup(job);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -543,16 +542,21 @@ function start() {
   updateFab();
 }
 
+function clearTranslations() {
+  for (const job of state.jobs.values()) removeTranslation(job);
+  for (const group of state.groups.values()) removeControl(group);
+  state.jobs.clear();
+  state.groups.clear();
+  state.queue.length = 0;
+}
+
 function stop() {
   state.active = false;
   state.preparingModels = null;
   state.preparationController?.abort();
   state.preparationController = null;
   state.downloadProgress = null;
-  for (const job of state.jobs.values()) removeTranslation(job);
-  state.jobs.clear();
-  state.groups.clear();
-  state.queue.length = 0;
+  clearTranslations();
   updateFab();
 }
 
@@ -597,6 +601,7 @@ function maintain() {
     const settled = job.status === 'done' || job.status === 'skipped' || job.status === 'error';
     if (!job.el.isConnected || job.dirty || overlapsEditor(job.el) || (settled && textOf(job.el) !== job.text)) {
       removeTranslation(job);
+      detachGroup(job);
       state.jobs.delete(job.el);
       continue;
     }
@@ -676,6 +681,11 @@ function applySettings(settings) {
   }).observe(document.documentElement, {
     childList: true, subtree: true, characterData: true,
     attributes: true, attributeFilter: ['contenteditable', 'hidden', 'aria-hidden', 'aria-pressed', 'class', 'href', 'src', 'srcset', 'alt', 'title', 'checked', 'value', 'colspan', 'rowspan'],
+  });
+  // Turbo clones the DOM for Back and Forward, without our jobs or button listeners.
+  document.addEventListener('turbo:before-cache', () => {
+    clearTranslations();
+    removeFab();
   });
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);
