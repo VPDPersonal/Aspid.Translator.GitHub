@@ -557,11 +557,14 @@ test('one header button switches all directory messages, independently from READ
     const controlStyle = () => page.$eval('#directory-header .ght-toggle', el => ({
       border: getComputedStyle(el).borderWidth,
       background: getComputedStyle(el).backgroundColor,
-      icon: getComputedStyle(el, '::before').backgroundColor,
+      icon: getComputedStyle(el, '::before').backgroundImage,
+      filter: getComputedStyle(el, '::before').filter,
       label: getComputedStyle(el.querySelector('.ght-toggle-text')).display,
     }));
-    await page.addStyleTag({ content: ':root{color-scheme:dark;--fgColor-muted:#9198a1}' });
-    assert.deepEqual(await controlStyle(), { border: '0px', background: 'rgba(0, 0, 0, 0)', icon: 'rgb(92, 180, 107)', label: 'none' });
+    await page.addStyleTag({ content: ':root{color-scheme:dark}' });
+    const translatedStyle = await controlStyle();
+    assert.match(translatedStyle.icon, /icons\/icon-32\.png/);
+    assert.deepEqual(translatedStyle, { border: '0px', background: 'rgba(0, 0, 0, 0)', icon: translatedStyle.icon, filter: 'none', label: 'none' });
     assert.equal(await page.$$eval('.react-directory-row .ght-toggle', els => els.length), 0);
     assert.equal(await page.$$eval('#directory [data-ght-clone]', els => els.length), 3);
     assert.match(await page.$eval('#README\\.md .react-directory-row-commit-cell [data-ght-clone]', el => el.textContent), /^feat\(scope\)!: Привет file \(#304\)$/);
@@ -571,9 +574,7 @@ test('one header button switches all directory messages, independently from READ
     assert.equal(await page.$eval('[data-testid="latest-commit-details"]', el => el.textContent), '1234567last week');
     await page.click('#directory-header .ght-toggle');
     await page.mouse.move(0, 0);
-    assert.equal((await controlStyle()).icon, 'rgb(145, 152, 161)');
-    await page.addStyleTag({ content: ':root{color-scheme:light;--fgColor-muted:#59636e}' });
-    assert.equal((await controlStyle()).icon, 'rgb(89, 99, 110)');
+    assert.deepEqual(await controlStyle(), { ...translatedStyle, filter: 'grayscale(1)' });
     assert.equal(await page.$$eval('#directory [data-ght-clone]', els => els.every(el => el.hasAttribute('data-ght-hidden'))), true);
     assert.equal(await page.$eval('#readme [data-ght-clone]', el => el.hasAttribute('data-ght-hidden')), false);
     await page.click('.ght-fab');
@@ -744,8 +745,8 @@ test('About translates independently with a header button, preserving names, web
       const heading = el.getBoundingClientRect();
       const label = el.firstElementChild.getBoundingClientRect();
       const gear = el.lastElementChild.getBoundingClientRect();
-      const globe = el.querySelector('.ght-toggle').getBoundingClientRect();
-      return { start: label.left - heading.left, end: heading.right - gear.right, gap: gear.left - globe.right };
+      const toggle = el.querySelector('.ght-toggle').getBoundingClientRect();
+      return { start: label.left - heading.left, end: heading.right - gear.right, gap: gear.left - toggle.right };
     }), { start: 0, end: 0, gap: 8 });
     assert.match(await page.$eval('#about [data-ght-clone]', el => el.textContent), /^Aspid\.MVVM — мощный.*MVVM framework for Unity\.$/);
     const metadata = await page.$eval('#about', el => ({

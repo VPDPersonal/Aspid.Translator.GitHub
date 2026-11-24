@@ -33,7 +33,7 @@ PRIVACY
 • Only you see the translation. Nothing is posted to GitHub.
 
 REQUIREMENTS
-Desktop Chrome 138 or newer. The first time you translate a language pair, click the 🌐 button in the bottom right corner: Chrome downloads the language model once.
+Desktop Chrome 138 or newer. The first time you translate a language pair, click the translation button in the bottom right corner: Chrome downloads the language model once.
 
 Open source under the MIT license: https://github.com/VPDPersonal/Aspid.Translator.GitHub
 Found a bad translation or a page that is not translated? Open an issue on GitHub.

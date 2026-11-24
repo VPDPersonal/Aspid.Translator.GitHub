@@ -52,6 +52,9 @@ export function validateRelease(files, { version, locales }) {
     assert.equal(bytes.readUInt32BE(20), Number(size), `Wrong icon height: ${path}`);
   }
   for (const path of Object.values(manifest.action.default_icon)) required(path);
+  const contentIcon = Buffer.from(required('icons/icon-32.png')).toString('base64');
+  assert.ok(text(files['content.css']).includes(`url("data:image/png;base64,${contentIcon}")`),
+    'The content stylesheet must embed the packaged 32 px icon');
   required('icons/banner-logo.svg');
   required('fonts/fonts.css');
   for (const [, path] of text(files['fonts/fonts.css']).matchAll(/url\(['"]?([^)'"\s]+)['"]?\)/g)) required(`fonts/${path}`);

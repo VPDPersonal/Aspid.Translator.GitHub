@@ -44,7 +44,7 @@ dependency advisories with `npm audit`.
 | `src/i18n.js`, `static/_locales/` | UI strings in every target language. |
 | `src/locales.js` | Bundles every locale into the settings page, which shows the target language's strings. |
 | `static/` | Manifest, styles and locales, copied to `dist/` as is. |
-| `assets/` | Icon sources: the Aspid snake (`aspid-snake.png`, from Aspid.FastTools), its smooth rendition on a dark tile (`aspid-snake-tile.jpg`) and `icon.mjs`, which builds from the tile `icon.svg` (128 px) and `icon-tile.svg` (48 px, bigger glyphs), plus the toolbar's `icon-small.svg`: the glyphs alone in the snake's green, without the snake (`npm run icons`). The build renders them to PNG, supersampled. |
+| `assets/` | The shared translator logo (`banner-logo.svg`), generated with `npm run icons` from the faceted Aspid snake (`aspid-snake.png`). The build renders it to PNG for Chrome and the GitHub controls. |
 | `build.mjs` | Bundles the scripts, renders the icons, copies the IBM Plex fonts of the settings page from `@fontsource`, sets the manifest version from `package.json` and packs the archive. |
 | `store/` | Chrome Web Store listing: descriptions, Dashboard answers, screenshots, promo tiles and `render.mjs`, which renders the images. |
 

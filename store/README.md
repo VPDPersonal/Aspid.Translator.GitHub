@@ -65,7 +65,7 @@ Check all three certifications:
 ## Test instructions
 
 > No account or setup is needed. Open any public pull request with non-English text, for example
-> https://github.com/NervJS/taro/pull/19523. The first time, click the 🌐 button in the bottom
+> https://github.com/NervJS/taro/pull/19523. The first time, click the translation button in the bottom
 > right corner so Chrome downloads the translation model. Requires desktop Chrome 138 or newer.
 
 ## Images

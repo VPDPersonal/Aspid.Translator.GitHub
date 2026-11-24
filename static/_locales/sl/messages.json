@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "Sicer kliknite gumb »🌐 Prevedi« v spodnjem desnem kotu.",
+    "message": "Sicer kliknite gumb »Prevedi« v spodnjem desnem kotu.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

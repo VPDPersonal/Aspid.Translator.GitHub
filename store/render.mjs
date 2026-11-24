@@ -52,7 +52,7 @@ const SHOTS = {
         offset: 90,
         original: '修复解决了这个问题',
         caption: 'The original is one click away',
-        sub: 'Every comment has its own toggle, and the 🌐 button flips the whole page',
+        sub: 'Every comment has its own toggle, and the floating button flips the whole page',
       },
       {
         name: '3-commits',
@@ -93,7 +93,7 @@ const SHOTS = {
         offset: 90,
         original: 'In which case you would set the param',
         caption: 'Оригинал в одном клике',
-        sub: 'У каждого комментария свой переключатель, а кнопка 🌐 переключает всю страницу',
+        sub: 'У каждого комментария свой переключатель, а плавающая кнопка переключает всю страницу',
       },
       {
         name: '3-commits',

@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "W przeciwnym razie kliknij przycisk „🌐 Przetłumacz” w prawym dolnym rogu.",
+    "message": "W przeciwnym razie kliknij przycisk „Przetłumacz” w prawym dolnym rogu.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

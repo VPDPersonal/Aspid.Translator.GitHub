@@ -10,15 +10,8 @@ const watch = process.argv.includes('--watch');
 const zip = process.argv.includes('--zip');
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 
-// Icon size -> source and padding. The Web Store wants the 128 px icon as 96 px artwork
-// with 16 px of transparent padding. 48 px has the snake with bigger glyphs; 16 and 32 px
-// are the glyphs alone, as the snake is too small to read there (see assets/icon.mjs).
-const ICONS = {
-  16: { svg: 'assets/icon-small.svg', padding: 0 },
-  32: { svg: 'assets/icon-small.svg', padding: 0 },
-  48: { svg: 'assets/icon-tile.svg', padding: 0 },
-  128: { svg: 'assets/icon.svg', padding: 16 },
-};
+const LOGO = 'assets/banner-logo.svg';
+const ICON_SIZES = [16, 32, 48, 128];
 
 // resvg scales the embedded snake image down by sampling it, which leaves speckles and jagged edges.
 // So each icon is rendered SUPERSAMPLE times larger and every SUPERSAMPLE x SUPERSAMPLE block is
@@ -76,14 +69,21 @@ function encodePng(width, height, rgba) {
 
 async function renderIcons() {
   await mkdir('dist/icons', { recursive: true });
-  for (const [size, { svg, padding }] of Object.entries(ICONS)) {
-    const source = await readFile(svg, 'utf8');
-    const art = Number(source.match(/viewBox="0 0 (\d+)/)[1]);
-    const pad = (padding / (size - 2 * padding)) * art; // padding in the drawing's units
-    const padded = source.replace(/viewBox="[^"]*"/, `viewBox="${-pad} ${-pad} ${art + 2 * pad} ${art + 2 * pad}"`);
-    await writeFile(`dist/icons/icon-${size}.png`, renderSupersampled(padded, Number(size)));
+  const source = await readFile(LOGO, 'utf8');
+  // The Web Store icon fits 96 px of artwork inside a 128 px canvas.
+  const storeIcon = source.replace('viewBox="0 0 96 96"', 'viewBox="-16 -16 128 128"');
+  for (const size of ICON_SIZES) {
+    const icon = renderSupersampled(size === 128 ? storeIcon : source, size);
+    await writeFile(`dist/icons/icon-${size}.png`, icon);
   }
-  await cp('assets/banner-logo.svg', 'dist/icons/banner-logo.svg');
+  await cp(LOGO, 'dist/icons/banner-logo.svg');
+}
+
+async function embedContentIcon() {
+  // Embed the PNG so injected CSS can use it without a web-accessible resource.
+  const css = await readFile('static/content.css', 'utf8');
+  const icon = await readFile('dist/icons/icon-32.png');
+  await writeFile('dist/content.css', css.replace('icons/icon-32.png', `data:image/png;base64,${icon.toString('base64')}`));
 }
 
 // IBM Plex (OFL 1.1) for the settings page, copied from the pinned @fontsource packages: only the faces
@@ -158,6 +158,7 @@ await cp('static', 'dist', { recursive: true, filter: path => basename(path) !==
 await cp('LICENSE', 'dist/LICENSE');
 await writeManifest();
 await renderIcons();
+await embedContentIcon();
 await copyFonts();
 
 const context = await esbuild.context({

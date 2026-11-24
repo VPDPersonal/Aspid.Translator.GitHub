@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "নাহলে নিচের ডান কোণের “🌐 অনুবাদ করুন” বোতামে ক্লিক করুন।",
+    "message": "নাহলে নিচের ডান কোণের “অনুবাদ করুন” বোতামে ক্লিক করুন।",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {
