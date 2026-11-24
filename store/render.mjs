@@ -19,9 +19,9 @@ const PROMO = [
   { name: 'marquee', width: 1400, height: 560 },
 ];
 
-// Store screenshots are 1280×800: a caption on top and the page below, cut by the bottom edge.
-const FRAME = { width: 1280, height: 800, top: 136, window: 1120 };
-const VIEWPORT = { width: 1280, height: Math.round(((FRAME.height - FRAME.top) * 1280) / FRAME.window) };
+// Store screenshots are 1280×800 with room for captions above and the dot pattern below.
+const FRAME = { width: 1280, height: 800, top: 136, bottom: 52, window: 1120 };
+const VIEWPORT = { width: 1280, height: Math.round(((FRAME.height - FRAME.top - FRAME.bottom) * 1280) / FRAME.window) };
 
 const ALL_PARTS = {
   prTitle: true, prBody: true, comments: true, reviewComments: true, commitTitles: true, commitBodies: true, readme: true, about: true,
