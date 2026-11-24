@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "Jika tidak, klik tombol “🌐 Terjemahkan” di pojok kanan bawah.",
+    "message": "Jika tidak, klik tombol “Terjemahkan” di pojok kanan bawah.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

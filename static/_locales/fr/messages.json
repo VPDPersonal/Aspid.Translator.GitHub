@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "Sinon, cliquez sur le bouton « 🌐 Traduire » en bas à droite.",
+    "message": "Sinon, cliquez sur le bouton « Traduire » en bas à droite.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

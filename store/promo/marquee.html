@@ -6,40 +6,48 @@
 <link rel="stylesheet" href="promo.css">
 <style>
   body { width: 1400px; height: 560px; }
-  .tile { height: 100%; display: grid; grid-template-columns: 560px 1fr; align-items: center; padding: 0 72px; gap: 40px; }
-  .brand { display: flex; align-items: center; gap: 20px; }
-  .brand img { width: 96px; height: 96px; filter: drop-shadow(0 10px 24px rgb(0 0 0 / 0.28)); }
-  .name { font-size: 36px; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; }
-  .tagline { margin: 36px 0 28px; font-size: 44px; font-weight: 700; line-height: 1.15; letter-spacing: -0.015em; }
-  .chips { display: flex; gap: 10px; }
-  .chip { font-size: 18px; padding: 6px 16px; }
-  .cards { position: relative; height: 300px; }
-  .comment { position: absolute; width: 640px; }
-  .original { top: 0; left: 0; transform: rotate(-3deg); opacity: 0.55; }
-  .translated { top: 150px; left: 60px; }
+  .tile { height: 100%; display: grid; grid-template-columns: 552px 1fr; align-items: center; padding: 0 80px; gap: 52px; }
+  .brand-logo { width: 146px; margin-bottom: 26px; }
+  h1 { font-size: 49px; }
+  .tagline { margin-top: 15px; font-size: 26px; }
+  .example {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    box-shadow: 0 24px 56px rgb(0 0 0 / .4);
+  }
+  .translation { padding: 25px 29px; }
+  .translation + .translation { border-top: 1px solid var(--line); }
+  .label { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--muted); font-size: 16px; }
+  .translation:last-child .label { color: var(--accent); }
+  .translation p { font-size: 21px; line-height: 1.5; }
+  .translation code {
+    padding: .1em .3em;
+    border-radius: 4px;
+    background: rgb(146 149 159 / .12);
+    color: var(--strong);
+    font: 85% ui-monospace, monospace;
+  }
 </style>
 </head>
 <body>
-<div class="tile bg">
+<main class="tile bg">
   <div>
-    <div class="brand">
-      <img src="../../assets/icon.svg" alt="">
-      <div class="name">Aspid.Translator.<wbr>GitHub</div>
-    </div>
-    <div class="tagline">Review pull requests<br>in your own language</div>
-    <div class="chips"><span class="chip">Free</span><span class="chip">On-device</span><span class="chip">Private</span><span class="chip">Open source</span></div>
+    <img class="brand-logo" src="../../assets/banner-logo.svg" alt="" width="146" height="146">
+    <h1><span class="brand-prefix">Aspid.</span>Translator.GitHub</h1>
+    <p class="tagline">Read GitHub in your own language</p>
   </div>
-  <div class="cards">
-    <div class="comment original">
-      <div class="comment-head"><span class="avatar"></span><b>contributor</b> commented</div>
-      <div class="comment-body">修复 H5 端 <code>createIntersectionObserver</code> 在目标就是容器自身时，<code>observe</code> 回调不触发的问题。</div>
+  <div class="example">
+    <div class="translation">
+      <div class="label">Original · Chinese</div>
+      <p lang="zh-Hans">修复 H5 端 <code>createIntersectionObserver</code> 在目标就是容器自身时，<code>observe</code> 回调不触发的问题。</p>
     </div>
-    <div class="comment translated">
-      <div class="comment-head"><span class="avatar"></span><b>contributor</b> commented</div>
-      <div class="label">🌐 Translated: Chinese → English<a>Show original</a></div>
-      <div class="comment-body">Fixes the <code>observe</code> callback not firing in <code>createIntersectionObserver</code> on H5 when the target is the container itself.</div>
+    <div class="translation">
+      <div class="label"><img src="../../assets/banner-logo.svg" alt="" width="19" height="19">Translated · English</div>
+      <p>Fixes the <code>observe</code> callback not firing in <code>createIntersectionObserver</code> on H5 when the target is the container itself.</p>
     </div>
   </div>
-</div>
+</main>
 </body>
 </html>

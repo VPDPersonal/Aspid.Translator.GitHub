@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "లేకపోతే, కింద కుడి మూలలో ఉన్న “🌐 అనువదించు” బటన్‌ను క్లిక్ చేయండి.",
+    "message": "లేకపోతే, కింద కుడి మూలలో ఉన్న “అనువదించు” బటన్‌ను క్లిక్ చేయండి.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

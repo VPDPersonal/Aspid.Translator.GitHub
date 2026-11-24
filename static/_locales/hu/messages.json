@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "Különben kattints a jobb alsó sarokban lévő „🌐 Fordítás” gombra.",
+    "message": "Különben kattints a jobb alsó sarokban lévő „Fordítás” gombra.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

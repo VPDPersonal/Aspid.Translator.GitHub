@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "இல்லையெனில், கீழ் வலது மூலையில் உள்ள “🌐 மொழிபெயர்” பட்டனைக் கிளிக் செய்யவும்.",
+    "message": "இல்லையெனில், கீழ் வலது மூலையில் உள்ள “மொழிபெயர்” பட்டனைக் கிளிக் செய்யவும்.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

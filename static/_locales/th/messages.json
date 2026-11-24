@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "หรือคลิกปุ่ม “🌐 แปล” ที่มุมขวาล่าง",
+    "message": "หรือคลิกปุ่ม “แปล” ที่มุมขวาล่าง",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

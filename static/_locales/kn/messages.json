@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "ಇಲ್ಲದಿದ್ದರೆ, ಕೆಳಗಿನ ಬಲ ಮೂಲೆಯಲ್ಲಿರುವ “🌐 ಅನುವಾದಿಸಿ” ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿ.",
+    "message": "ಇಲ್ಲದಿದ್ದರೆ, ಕೆಳಗಿನ ಬಲ ಮೂಲೆಯಲ್ಲಿರುವ “ಅನುವಾದಿಸಿ” ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿ.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

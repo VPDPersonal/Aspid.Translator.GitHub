@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "Nếu không, hãy nhấp vào nút “🌐 Dịch” ở góc dưới bên phải.",
+    "message": "Nếu không, hãy nhấp vào nút “Dịch” ở góc dưới bên phải.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "否则，请点击右下角的“🌐 翻译”按钮。",
+    "message": "否则，请点击右下角的“翻译”按钮。",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {

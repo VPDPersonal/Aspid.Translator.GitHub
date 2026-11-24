@@ -28,7 +28,7 @@
     "description": "Switch."
   },
   "settingsAutoHint": {
-    "message": "Sonst klicke unten rechts auf die Schaltfläche „🌐 Übersetzen“.",
+    "message": "Sonst klicke unten rechts auf die Schaltfläche „Übersetzen“.",
     "description": "Hint under the checkbox. Quote the floating button text from fabTranslate."
   },
   "settingsParts": {
