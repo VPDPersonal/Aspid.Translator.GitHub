@@ -1159,6 +1159,42 @@ test('navigation cancels a stalled request and translates the new page before an
   } finally { await page.close(); }
 });
 
+test('returning to a cached repository page resumes README translation without a reload', async () => {
+  const repo = '/VPDPersonal/Aspid.Translator.GitHub';
+  const readme = '<article class="markdown-body" itemprop="text" style="display:grid!important"><h1 id="overview">Hello README</h1></article>';
+  const { page, settled } = await fixture(readme, { path: repo });
+  try {
+    await page.waitForSelector('[data-ght-clone] #overview');
+    await settled();
+    const snapshot = await page.evaluate(repo => {
+      document.documentElement.dispatchEvent(new CustomEvent('turbo:before-cache', { bubbles: true }));
+      window.__repositorySnapshot = document.body.cloneNode(true);
+      history.pushState({}, '', `${repo}/issues`);
+      document.body.replaceWith(document.createElement('body'));
+      document.dispatchEvent(new Event('turbo:load'));
+      const body = window.__repositorySnapshot;
+      return {
+        artifacts: body.querySelectorAll('[data-ght-source], [data-ght-clone], [data-ght-ui], .ght-fab').length,
+        display: body.querySelector('article').style.display,
+        heading: body.querySelector('article #overview')?.textContent,
+      };
+    }, repo);
+    await page.waitForSelector('.ght-fab');
+    await page.evaluate(repo => {
+      history.replaceState({}, '', repo);
+      document.body.replaceWith(window.__repositorySnapshot);
+      document.dispatchEvent(new Event('turbo:load'));
+    }, repo);
+    await page.waitForFunction(() => window.__translationSources.length === 2, { timeout: 3000 });
+    await page.waitForSelector('.ght-toggle[data-state="done"]');
+    assert.deepEqual(snapshot, { artifacts: 0, display: 'grid', heading: 'Hello README' });
+    assert.equal(await page.$$eval('.ght-fab', buttons => buttons.length), 1);
+    await page.click('.ght-toggle');
+    assert.equal(await page.$eval('[data-ght-source] #overview', el => el.textContent), 'Hello README');
+    assert.equal(await page.$eval('[data-ght-source]', el => getComputedStyle(el).display), 'grid');
+  } finally { await page.close(); }
+});
+
 test('editing a working source cancels its stale translation', async () => {
   const { page } = await fixture(comment(), { mode: 'stalled' });
   try {
