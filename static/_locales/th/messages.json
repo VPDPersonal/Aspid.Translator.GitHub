@@ -204,15 +204,6 @@
       }
     }
   },
-  "tooltipError": {
-    "message": "แปลไม่สำเร็จ: $ERROR$",
-    "description": "Tooltip of a title that failed to translate.",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "sourceUnknown": {
     "message": "ต้นฉบับ",
     "description": "Stands for the source language when it is unknown."

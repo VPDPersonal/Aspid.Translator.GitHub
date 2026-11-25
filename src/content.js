@@ -66,29 +66,30 @@ const TARGETS = [
   { mode: 'block', kind: null, selector: '.markdown-body' },
 ];
 
-function markdownKind(el) {
+const MARKDOWN_PARTS_BY_PAGE = {
+  issue: 'issues', discussion: 'discussions', discussionList: 'discussions', releases: 'releases', wiki: 'wiki', lists: 'lists',
+};
+const REVIEW_COMMENT = [
+  '.review-comment', '.review-thread-component', '.js-resolvable-timeline-thread-container',
+  '[id^="discussion_r"]', '[id^="pullrequestreview-"]', '[data-testid*="review-thread"]',
+  '[class*="ReviewThread"]',
+].join(',');
+
+function markdownKind(el, pageKind) {
   if (el.closest(REFERENCED_COMMIT)) return el.closest('[class*="commitMessageText"]') ? 'commitTitles' : 'commitBodies';
-  const pageParts = { issue: 'issues', discussion: 'discussions', discussionList: 'discussions', releases: 'releases', wiki: 'wiki', lists: 'lists' };
-  if (pageParts[state.pageKind]) return pageParts[state.pageKind];
-  if (state.pageKind === 'home' || state.pageKind === 'feed') return el.closest(FEED_CARD) ? 'feed' : null;
-  if (state.pageKind === 'compare') return null;
+  if (MARKDOWN_PARTS_BY_PAGE[pageKind]) return MARKDOWN_PARTS_BY_PAGE[pageKind];
+  if (pageKind === 'home' || pageKind === 'feed') return el.closest(FEED_CARD) ? 'feed' : null;
+  if (pageKind === 'compare') return null;
   if (el.matches(README_SELECTOR)) return 'readme';
   if (el.closest('[id^="pullrequest-"]')) return 'prBody';
-  const review = [
-    '.review-comment', '.review-thread-component', '.js-resolvable-timeline-thread-container',
-    '[id^="discussion_r"]', '[id^="pullrequestreview-"]', '[data-testid*="review-thread"]',
-    '[class*="ReviewThread"]',
-  ].join(',');
-  return el.closest(review) ? 'reviewComments' : 'comments';
+  return el.closest(REVIEW_COMMENT) ? 'reviewComments' : 'comments';
 }
 
 const state = {
   settings: null,
   provider: null,
   url: '',
-  pageKey: '',
-  pageKind: '',
-  pageAlways: false,
+  page: null,
   active: false,
   showOriginal: false,
   downloadProgress: null,
@@ -112,12 +113,31 @@ const sameLanguage = (a, b) => (targetFor(a) ?? a.toLowerCase()) === (targetFor(
 // ---------------------------------------------------------------------------------------------
 // Translation of one element.
 
-async function groupBySource(segments, provider, target, signal) {
+// Yield to the browser between segments so large documents leave time for input and painting.
+const PAGE_WORK_BUDGET_MS = 8;
+
+function pageWorkSlice(signal) {
+  let deadline = performance.now() + PAGE_WORK_BUDGET_MS;
+  return () => {
+    signal.throwIfAborted();
+    if (performance.now() < deadline) return;
+    const nextTask = globalThis.scheduler?.yield?.() ?? new Promise(resolve => setTimeout(resolve, 0));
+    return nextTask.then(() => {
+      signal.throwIfAborted();
+      deadline = performance.now() + PAGE_WORK_BUDGET_MS;
+    });
+  };
+}
+
+async function groupBySource(segments, provider, target, job, pauseIfNeeded) {
+  const { signal } = job.controller;
   const detectLanguage = createLanguageDetector({ signal });
   const batches = new Map();
   const guesses = new Map();
   for (const segment of segments) {
-    signal.throwIfAborted();
+    const pause = pauseIfNeeded();
+    if (pause) await pause;
+    if (job.mode === 'inline') protectPrefix(segment);
     const sample = stripTags(segment.text).slice(0, 2000);
     if (!hasLetters(sample)) continue;
     if (!guesses.has(sample)) {
@@ -141,14 +161,14 @@ async function translateElement(job) {
   const { provider, settings: { target } } = state;
   const { signal } = job.controller;
   signal.throwIfAborted();
+  const pauseIfNeeded = pageWorkSlice(signal);
   const clone = cloneForTranslation(job.el);
   const proseLink = job.el.matches(FILE_COMMIT_TITLE) ? 'a[href*="/commit/"]'
     : job.kind === 'feed' ? FEED_TITLE_LINK : null;
   const segments = job.mode === 'plain' ? collectPlainSegments(clone)
     : collectSegments(clone, proseLink ? el => el.matches(proseLink) : null);
-  if (job.mode === 'inline') segments.forEach(protectPrefix);
 
-  const batches = await groupBySource(segments, provider, target, signal);
+  const batches = await groupBySource(segments, provider, target, job, pauseIfNeeded);
   job.sources.clear();
   let changed = false;
   for (const [source, batch] of batches) {
@@ -156,16 +176,17 @@ async function translateElement(job) {
     // A model download must prepare the specific pair that requested activation.
     job.modelSource = source;
     const result = await provider.translate({ texts: batch.map(segment => segment.text), source, target, signal });
-    signal.throwIfAborted();
     const language = source ?? result.sourceLanguage;
-    batch.forEach((segment, index) => {
+    for (const [index, segment] of batch.entries()) {
+      const pause = pauseIfNeeded();
+      if (pause) await pause;
       const translated = result.translations[index]?.trim();
       if (translated && translated !== segment.text) {
         applyTranslation(segment, translated);
         changed = true;
         if (language) job.sources.add(language);
       }
-    });
+    }
   }
   return changed ? clone : null;
 }
@@ -182,7 +203,7 @@ const io = new IntersectionObserver((entries) => {
   }
 }, { rootMargin: '600px 0px' });
 
-const isCurrent = (job) => state.jobs.get(job.el) === job;
+const isCurrent = (job) => state.jobs.get(job.el) === job && job.el.isConnected && !job.dirty;
 
 const EDITABLE = '[contenteditable=""], [contenteditable="true" i], [contenteditable="plaintext-only" i]';
 function overlapsEditor(el) {
@@ -191,9 +212,10 @@ function overlapsEditor(el) {
 
 function scan() {
   if (!state.active) return;
+  const { kind: pageKind } = state.page;
   const { parts } = state.settings;
-  for (const target of [...extraTargets(state.pageKind), ...TARGETS]) {
-    if (target.pages && !target.pages.includes(state.pageKind)) continue;
+  for (const target of [...extraTargets(pageKind), ...TARGETS]) {
+    if (target.pages && !target.pages.includes(pageKind)) continue;
     if (target.kind && !parts[target.kind]) continue;
     for (const el of target.find ? target.find() : document.querySelectorAll(target.selector)) {
       const excluded = el.closest(EXCLUDE_SELECTOR);
@@ -202,11 +224,11 @@ function scan() {
       let kind = target.kind;
       if (target.mode === 'block') {
         if (el.querySelector('.markdown-body')) continue; // translate the innermost body only
-        kind ??= markdownKind(el);
+        kind ??= markdownKind(el, pageKind);
         if (!parts[kind]) continue;
       }
       const job = {
-        el, kind, mode: target.mode, status: 'pending', showOriginal: state.showOriginal,
+        el, kind, mode: target.mode, status: 'pending',
         clone: null, embeds: [], sources: new Set(), modelSource: null, text: '', errorText: null, group: null,
         controller: new AbortController(), dirty: false,
       };
@@ -277,7 +299,7 @@ function retry(job) {
 }
 
 // Must be called from a click handler: model downloads need a user gesture.
-function prepareModels(source = 'en') {
+async function prepareModels(source = 'en') {
   if (state.preparingModels) return;
   const { provider, settings: { target } } = state;
   // The detector is optional because chrome.i18n can also identify the source language.
@@ -285,32 +307,29 @@ function prepareModels(source = 'en') {
   state.preparationController = controller;
   const { signal } = controller;
   prepareDetector({ signal }).catch(() => {});
-  const download = provider.prepare && !sameLanguage(source, target) ? provider.prepare({ source, target, signal }) : null;
+  const download = !sameLanguage(source, target) && provider.prepare?.({ source, target, signal });
   const preparation = Promise.resolve(download);
   state.preparingModels = preparation;
   for (const group of state.groups.values()) updateControl(group);
   updateFab();
-  preparation.then(
-    () => {
-      if (state.preparingModels !== preparation) return;
-      state.preparingModels = null;
-      state.downloadProgress = null;
-      for (const job of state.jobs.values()) if (job.status === 'activation') retry(job);
-      updateFab();
-    },
-    (error) => {
-      if (state.preparingModels !== preparation) return;
-      state.preparingModels = null;
-      state.downloadProgress = null;
-      for (const job of state.jobs.values()) {
-        if (job.status === 'activation') {
-          job.errorText = t('labelDownloadFailed', error.message);
-          updateControl(job.group);
-        }
-      }
-      updateFab();
-    },
-  );
+
+  let errorText;
+  try {
+    await preparation;
+  } catch (error) {
+    errorText = t('labelDownloadFailed', error.message);
+  }
+  if (state.preparingModels !== preparation) return;
+  state.preparingModels = null;
+  state.downloadProgress = null;
+  for (const job of state.jobs.values()) {
+    if (job.status !== 'activation') continue;
+    if (errorText) {
+      job.errorText = errorText;
+      updateControl(job.group);
+    } else retry(job);
+  }
+  updateFab();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -333,8 +352,7 @@ function setHidden(node, hidden) {
   }
 }
 
-function attachGroup(job) {
-  const scope = controlScope(job.el, job.kind);
+function attachGroup(job, scope = controlScope(job.el, job.kind, state.page.kind)) {
   let group = state.groups.get(scope.root);
   if (!group) {
     group = { ...scope, jobs: new Set(), showOriginal: state.showOriginal, control: null };
@@ -342,7 +360,6 @@ function attachGroup(job) {
   }
   group.jobs.add(job);
   job.group = group;
-  job.showOriginal = group.showOriginal;
 }
 
 function detachGroup(job) {
@@ -368,12 +385,15 @@ function onControlClick(group) {
     errors.forEach(retry);
     return;
   }
-  group.showOriginal = !group.showOriginal;
+  showGroup(group, !group.showOriginal);
+  updateControl(group);
+}
+
+function showGroup(group, showOriginal) {
+  group.showOriginal = showOriginal;
   for (const job of group.jobs) {
-    job.showOriginal = group.showOriginal;
     if (job.status === 'done') render(job);
   }
-  updateControl(group);
 }
 
 function updateControl(group) {
@@ -449,10 +469,11 @@ function moveIds(job, toClone) {
 }
 
 function render(job) {
-  setHidden(job.el, !job.showOriginal);
-  setHidden(job.clone, job.showOriginal);
-  moveIds(job, !job.showOriginal);
-  placeEmbeds(job.embeds, !job.showOriginal);
+  const { showOriginal } = job.group;
+  setHidden(job.el, !showOriginal);
+  setHidden(job.clone, showOriginal);
+  moveIds(job, !showOriginal);
+  placeEmbeds(job.embeds, !showOriginal);
   if (job.mode !== 'block') {
     const from = [...job.sources].map(code => languageName(code)).join(', ') || t('sourceUnknown');
     job.clone.title = t('tooltipOriginal', from, job.el.textContent.trim());
@@ -526,11 +547,7 @@ function onFabClick() {
     return;
   }
   state.showOriginal = !state.showOriginal;
-  for (const group of state.groups.values()) group.showOriginal = state.showOriginal;
-  for (const job of state.jobs.values()) {
-    job.showOriginal = state.showOriginal;
-    if (job.status === 'done') render(job);
-  }
+  for (const group of state.groups.values()) showGroup(group, state.showOriginal);
   for (const group of state.groups.values()) updateControl(group);
   updateFab();
 }
@@ -565,12 +582,13 @@ function stop() {
 
 // Repository descriptions and commit messages can be translated without a README.
 function syncFab() {
-  const visible = state.pageKey
-    && (state.pageAlways || (state.settings.parts.readme && document.querySelector(README_SELECTOR))
-      || (state.settings.parts.commitTitles && (directoryMessages().length || fileCommitMessages().length))
-      || (state.settings.parts.about && document.querySelector(ABOUT_SELECTOR))
-      || (state.settings.parts.feed && ['home', 'feed'].includes(state.pageKind)
-        && (feedContent().length || (state.pageKind === 'home' && homeTitles().length))));
+  const { page, settings: { parts } } = state;
+  const visible = page && (page.always
+    || (parts.readme && document.querySelector(README_SELECTOR))
+    || (parts.commitTitles && (directoryMessages().length || fileCommitMessages().length))
+    || (parts.about && document.querySelector(ABOUT_SELECTOR))
+    || (parts.feed && (page.kind === 'home' || page.kind === 'feed')
+      && (feedContent().length || (page.kind === 'home' && homeTitles().length))));
   if (visible) ensureFab();
   else removeFab();
 }
@@ -579,21 +597,11 @@ function onLocationChange() {
   if (location.href === state.url) return;
   state.url = location.href;
   const page = pageOf(location.pathname);
-  if (!page) {
+  if (page?.key !== state.page?.key) {
+    state.page = page;
     stop();
-    state.pageKey = '';
-    state.pageKind = '';
-    syncFab();
-    return;
+    if (page && state.settings.auto) start();
   }
-  if (page.key !== state.pageKey) {
-    state.pageKey = page.key;
-    state.pageKind = page.kind;
-    state.pageAlways = page.always;
-    stop();
-    if (state.settings.auto) start();
-  }
-  syncFab();
 }
 
 // Drops translations of removed elements and re-translates elements whose text changed.
@@ -601,7 +609,7 @@ function maintain() {
   onLocationChange();
   syncFab();
   if (!state.active) return;
-  for (const job of [...state.jobs.values()]) {
+  for (const job of state.jobs.values()) {
     const settled = job.status === 'done' || job.status === 'skipped' || job.status === 'error';
     if (!job.el.isConnected || job.dirty || overlapsEditor(job.el) || (settled && textOf(job.el) !== job.text)) {
       removeTranslation(job);
@@ -610,9 +618,10 @@ function maintain() {
       continue;
     }
     if (job.clone && job.clone.parentNode !== job.el.parentNode) job.el.after(job.clone);
-    if (controlScope(job.el, job.kind).root !== job.group.root) {
+    const scope = controlScope(job.el, job.kind, state.page.kind);
+    if (scope.root !== job.group.root) {
       detachGroup(job);
-      attachGroup(job);
+      attachGroup(job, scope);
       if (job.status === 'done') render(job);
     }
   }
@@ -639,7 +648,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   const previous = state.settings;
   const settings = normalizeSettings(changes.settings.newValue);
   applySettings(settings);
-  if (!previous || !state.pageKey) return;
+  if (!previous || !state.page) return;
   const changed = previous.provider !== settings.provider || previous.target !== settings.target
     || Object.keys(settings.parts).some(key => previous.parts[key] !== settings.parts[key]);
   if (changed) {
@@ -663,6 +672,7 @@ function applySettings(settings) {
   const initialSettings = await loadSettings();
   if (!state.settings) applySettings(initialSettings);
   onLocationChange();
+  syncFab();
   const ownUI = node => (node.nodeType === 1 ? node : node.parentElement)?.closest('[data-ght-ui], [data-ght-clone], .ght-fab');
   const movedEmbed = node => node.nodeType === 8 && node.nodeValue === 'ght-embed'
     || node.nodeType === 1 && node.matches('.render-needs-enrichment');
@@ -694,6 +704,6 @@ function applySettings(settings) {
   document.addEventListener('turbo:load', scheduleMaintain);
   window.addEventListener('popstate', scheduleMaintain);
   window.addEventListener('resize', () => {
-    if (state.active && (state.pageKind === 'issue' || fileCommitMessages().length)) scheduleMaintain();
+    if (state.active && (state.page.kind === 'issue' || fileCommitMessages().length)) scheduleMaintain();
   });
 })();

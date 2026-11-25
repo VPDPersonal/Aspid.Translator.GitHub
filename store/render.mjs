@@ -23,11 +23,6 @@ const PROMO = [
 const FRAME = { width: 1280, height: 800, top: 136, bottom: 52, window: 1120 };
 const VIEWPORT = { width: 1280, height: Math.round(((FRAME.height - FRAME.top - FRAME.bottom) * 1280) / FRAME.window) };
 
-const ALL_PARTS = {
-  prTitle: true, prBody: true, comments: true, reviewComments: true, commitTitles: true, commitBodies: true, readme: true, about: true,
-  issues: true, lists: true, releases: true, discussions: true, wiki: true, feed: true,
-};
-
 /**
  * One screenshot per entry, per store language. `at` is the original text of a comment to
  * scroll to (the top of the page when absent), `offset` is where its body ends up in the
@@ -348,7 +343,7 @@ async function renderShots(only) {
       const setup = await browser.newPage();
       await setup.goto(`chrome-extension://${extensionId}/options.html`);
       await setup.evaluate((settings) => chrome.storage.local.set({ settings }), {
-        provider: 'builtin', target: set.target, auto: true, parts: ALL_PARTS,
+        target: set.target,
       });
       await setup.close();
       for (const shot of set.list) {

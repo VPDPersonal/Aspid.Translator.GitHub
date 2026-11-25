@@ -1,5 +1,6 @@
 node_modules/
 dist/
 release/
+/output/
 .idea/
 .DS_Store

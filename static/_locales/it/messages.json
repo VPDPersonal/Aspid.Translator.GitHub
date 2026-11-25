@@ -204,15 +204,6 @@
       }
     }
   },
-  "tooltipError": {
-    "message": "Traduzione non riuscita: $ERROR$",
-    "description": "Tooltip of a title that failed to translate.",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "sourceUnknown": {
     "message": "originale",
     "description": "Stands for the source language when it is unknown."

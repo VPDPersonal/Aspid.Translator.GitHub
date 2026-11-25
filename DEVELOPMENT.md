@@ -42,7 +42,7 @@ dependency advisories with `npm audit`.
 | `src/settings.js` | Stored settings, their defaults and the list of target languages. |
 | `src/options.js`, `static/options.html` | Settings page. |
 | `src/i18n.js`, `static/_locales/` | UI strings in every target language. |
-| `src/locales.js` | Bundles every locale into the settings page, which shows the target language's strings. |
+| `src/locales.js` | Loads the target language's messages from the packaged locale files. |
 | `static/` | Manifest, styles and locales, copied to `dist/` as is. |
 | `assets/` | The shared translator logo (`banner-logo.svg`), generated with `npm run icons` from the faceted Aspid snake (`aspid-snake.png`). The build renders it to PNG for Chrome. |
 | `build.mjs` | Bundles the scripts, renders the icons, copies the IBM Plex fonts of the settings page from `@fontsource`, sets the manifest version from `package.json` and packs the archive. |
@@ -55,8 +55,8 @@ The Dashboard fields are in [`store/README.md`](store/README.md).
 
 To add a UI language, copy `static/_locales/en/messages.json` to a folder named after the
 [locale code](https://developer.chrome.com/docs/extensions/reference/api/i18n#locales) and translate
-the `message` fields. Keep the `$NAME$` placeholders as they are. The settings page bundles every
-locale and shows it when its language is the target.
+the `message` fields. Keep the `$NAME$` placeholders as they are. The settings page reads
+the packaged locale when its language is the target.
 
 To add a translation engine, implement the `Provider` interface from `src/providers/index.js`
 in a new module next to it and add it to `PROVIDERS`. The settings page and the content script

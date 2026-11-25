@@ -204,15 +204,6 @@
       }
     }
   },
-  "tooltipError": {
-    "message": "Preklad zlyhal: $ERROR$",
-    "description": "Tooltip of a title that failed to translate.",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "sourceUnknown": {
     "message": "originál",
     "description": "Stands for the source language when it is unknown."

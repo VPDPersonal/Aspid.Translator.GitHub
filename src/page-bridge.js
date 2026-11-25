@@ -32,7 +32,6 @@ function listen() {
     if (!message) return;
     const request = pending.get(message.id);
     if (!request) return;
-    pending.delete(message.id);
     request.cleanup();
     if (message.error) {
       const text = message.code === 'Unsupported' ? t('errorUnsupported') : message.error;
@@ -57,30 +56,30 @@ function listen() {
 export function callBridge(op, args, { signal } = {}) {
   listen();
   return new Promise((resolve, reject) => {
-    if (signal?.aborted) { reject(signal.reason); return; }
+    signal?.throwIfAborted();
     const id = ++seq;
-    const cancel = () => {
+    let timer;
+    const cleanup = () => {
       pending.delete(id);
-      request.cleanup();
-      reject(signal.reason);
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', abort);
+    };
+    const cancel = error => {
+      cleanup();
+      reject(error);
       window.dispatchEvent(new CustomEvent('ght:cancel', { detail: JSON.stringify({ id }) }));
     };
-    const request = { resolve, reject, timer: null, cleanup: () => {
-      clearTimeout(request.timer);
-      signal?.removeEventListener('abort', cancel);
-    }, arm: () => {
-      clearTimeout(request.timer);
-      request.timer = setTimeout(() => {
-        pending.delete(id);
-        request.cleanup();
-        reject(Object.assign(new Error(t('errorTimeout')), { code: 'TimeoutError' }));
-        window.dispatchEvent(new CustomEvent('ght:cancel', { detail: JSON.stringify({ id }) }));
+    const abort = () => cancel(signal.reason);
+    const arm = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        cancel(Object.assign(new Error(t('errorTimeout')), { code: 'TimeoutError' }));
         progressListener?.(1); // Clear a stalled download indicator so Retry remains visible.
       }, TIMEOUTS[op] ?? DOWNLOAD_TIMEOUT);
-    } };
-    pending.set(id, request);
-    signal?.addEventListener('abort', cancel, { once: true });
-    request.arm();
+    };
+    pending.set(id, { resolve, reject, cleanup, arm });
+    signal?.addEventListener('abort', abort, { once: true });
+    arm();
     window.dispatchEvent(new CustomEvent('ght:req', { detail: JSON.stringify({ id, op, args }) }));
   });
 }

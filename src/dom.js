@@ -61,29 +61,22 @@ function isAtom(el, proseLinks) {
   return el.matches(ATOM_SELECTOR) && !proseLinks?.(el);
 }
 
-function collectRuns(root) {
-  const runs = [];
-  const visit = (el) => {
-    if (el.matches(SKIP_BLOCK_SELECTOR)) return;
-    let run = [];
-    const flush = () => {
-      if (run.length) runs.push(run);
+function* collectRuns(el) {
+  if (el.matches(SKIP_BLOCK_SELECTOR)) return;
+  let run = [];
+  for (const child of el.childNodes) {
+    if (child.nodeName === 'BR') {
+      if (run.length) yield run;
       run = [];
-    };
-    for (const child of [...el.childNodes]) {
-      if (child.nodeName === 'BR') {
-        flush();
-      } else if (child.nodeType === Node.ELEMENT_NODE && isBlock(child)) {
-        flush();
-        visit(child);
-      } else if (child.nodeType === Node.TEXT_NODE || child.nodeType === Node.ELEMENT_NODE) {
-        run.push(child);
-      }
+    } else if (child.nodeType === Node.ELEMENT_NODE && isBlock(child)) {
+      if (run.length) yield run;
+      run = [];
+      yield* collectRuns(child);
+    } else if (child.nodeType === Node.TEXT_NODE || child.nodeType === Node.ELEMENT_NODE) {
+      run.push(child);
     }
-    flush();
-  };
-  visit(root);
-  return runs;
+  }
+  if (run.length) yield run;
 }
 
 function encodeRun(run, proseLinks) {
@@ -105,10 +98,11 @@ function encodeRun(run, proseLinks) {
 }
 
 /** Returns the segments of `root` that contain words to translate. */
-export function collectSegments(root, proseLinks) {
-  return collectRuns(root)
-    .map(run => encodeRun(run, proseLinks))
-    .filter((segment) => hasLetters(stripTags(segment.text)));
+export function* collectSegments(root, proseLinks) {
+  for (const run of collectRuns(root)) {
+    const segment = encodeRun(run, proseLinks);
+    if (hasLetters(stripTags(segment.text))) yield segment;
+  }
 }
 
 // A tag, or a word together with the `.`, `/` and `-` joints of file and package names.

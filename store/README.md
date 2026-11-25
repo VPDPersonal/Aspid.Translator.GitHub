@@ -1,7 +1,7 @@
 # Chrome Web Store listing
 
 Everything the [Developer Dashboard](https://chrome.google.com/webstore/devconsole) asks for,
-ready to paste. Upload `release/aspid-github-translator-<version>.zip` from `npm run zip`.
+ready to paste. Upload `release/asp-translator-github-<version>.zip` from `npm run zip`.
 
 ## Package
 

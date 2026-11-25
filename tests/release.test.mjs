@@ -109,6 +109,12 @@ test('the packaged extension translates a GitHub page and applies saved options 
     await settings.keyboard.press('Enter');
     await settings.click('[data-part="commitTitles"]');
     assert.equal(await settings.$eval(commitGroup + ' .group-count', el => el.textContent), '1 / 2');
+    for (const [target, locale] of [['pt', 'pt_BR'], ['zh-Hant', 'zh_TW']]) {
+      const messages = JSON.parse(new TextDecoder().decode(files[`_locales/${locale}/messages.json`]));
+      await settings.select('#target', target);
+      await settings.waitForFunction(language => document.documentElement.lang === language, {}, target);
+      assert.equal(await settings.title(), messages.settingsTitle.message);
+    }
     await settings.select('#target', 'ar');
     await settings.waitForFunction(() => document.documentElement.lang === 'ar');
     assert.equal(await settings.$eval('html', el => el.dir), 'rtl');

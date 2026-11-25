@@ -1,4 +1,4 @@
-import { DISCUSSION_TITLE, ISSUE_TITLE, PR_MAIN_TITLE, REFERENCED_COMMIT, listScope, pageOf, releaseScope, releaseTitles, wikiScope } from './pages.js';
+import { DISCUSSION_TITLE, ISSUE_TITLE, PR_MAIN_TITLE, REFERENCED_COMMIT, releaseScope, releaseTitles } from './pages.js';
 
 const COMMENT = '.js-comment, .timeline-comment, .review-comment, .discussion-comment, .react-issue-body, [id^="discussion_r"], [data-testid="issue-body"], [data-testid="issue-comment"], [data-testid="comment-viewer-outer-box"], [data-testid="comment-viewer-container"], [class*="ReviewComment"]';
 const REACTIONS = '.comment-reactions, .js-reactions-container, [data-testid="reactions"], [role="toolbar"][aria-label="Reactions"]';
@@ -62,15 +62,11 @@ function historyPosition(header) {
   return { parent, appearance: 'icon' };
 }
 
-export function controlScope(el, kind) {
-  const pageKind = pageOf(location.pathname)?.kind;
-  if (kind === 'discussions' && pageKind === 'discussionList') {
-    return { root: document.querySelector('.repository-content, main, [role="main"]') ?? listScope(el), kind: 'collection', local: false };
+export function controlScope(el, kind, pageKind) {
+  if (kind === 'lists' || kind === 'wiki' || kind === 'feed' || (kind === 'discussions' && pageKind === 'discussionList')) {
+    return { root: null, local: false };
   }
-  if (kind === 'lists') return { root: listScope(el), kind: 'collection', local: false };
   if (kind === 'releases') return { root: releaseScope(el), kind: 'release' };
-  if (kind === 'wiki') return { root: wikiScope(el), kind: 'wiki', local: false };
-  if (kind === 'feed') return { root: document.body, kind: 'collection', local: false };
   if ((kind === 'issues' && el.matches(ISSUE_TITLE)) || (kind === 'discussions' && el.matches(DISCUSSION_TITLE))) {
     const title = kind === 'issues'
       ? document.querySelector('[data-testid="issue-title"], h1 .js-issue-title') ?? el
@@ -217,9 +213,7 @@ function titlePosition(root, titleKind) {
   return { parent: root, appearance };
 }
 
-function position(group) {
-  const el = [...group.jobs][0]?.el;
-  if (!el) return null;
+function position(group, el) {
   if (group.kind === 'directory') return historyPosition(directoryHeader(group.root));
   if (group.kind === 'release') {
     const title = releaseTitles(group.root)[0];
@@ -282,7 +276,10 @@ export function createControl(onClick) {
 }
 
 export function placeControl(group) {
-  const target = position(group);
+  const job = group.jobs.values().next().value;
+  if (!job) return;
+  const { el } = job;
+  const target = position(group, el);
   if (!target?.parent?.isConnected) return;
   const { slot, button } = group.control;
   slot.classList.toggle('ght-control-footer', Boolean(target.footer));
@@ -309,7 +306,6 @@ export function placeControl(group) {
     target.parent.insertBefore(slot, before);
   }
   if (group.kind === 'document') {
-    const el = [...group.jobs][0].el;
     const preview = el.closest('[class*="blobContainer"]')?.querySelector('[data-text="Preview"]')?.closest('button');
     const inactive = preview && preview.getAttribute('aria-pressed') === 'false';
     let hidden = Boolean(inactive);

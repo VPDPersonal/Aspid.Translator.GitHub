@@ -1344,7 +1344,7 @@ test('model preparation shows immediate busy feedback and ignores duplicate page
     await page.waitForSelector('.ght-toggle[data-state="activation"]');
     await page.click('.ght-fab');
     assert.match(await page.$eval('.ght-fab', el => el.textContent), /Downloading model 0%/);
-    assert.equal(await page.$eval('.ght-toggle', el => el.disabled), true);
+    assert.deepEqual(await page.$eval('.ght-toggle', el => [el.disabled, getComputedStyle(el).cursor]), [true, 'default']);
     await page.click('.ght-fab');
     assert.deepEqual(await page.evaluate(() => window.__preparedSources), ['en']);
     await page.evaluate(() => window.__finishDownload());
@@ -1355,6 +1355,37 @@ test('model preparation shows immediate busy feedback and ignores duplicate page
   } finally {
     await page.close();
   }
+});
+
+test('applying a translation leaves time for page input without changing the cursor', async () => {
+  const body = '<button id="native-action">GitHub action</button><div class="markdown-body"><p>Hello first</p><p>Hello second</p></div>';
+  const { page, settled } = await fixture(body, { mode: 'stalled' });
+  try {
+    await page.waitForFunction(() => Boolean(window.__hungRequest));
+    assert.deepEqual(await page.$eval('.ght-toggle', el => [el.getAttribute('aria-busy'), getComputedStyle(el).cursor]), ['true', 'default']);
+    await page.evaluate(() => {
+      document.querySelector('#native-action').addEventListener('click', () => { window.__nativeClicked = true; });
+      const now = performance.now;
+      const yieldTask = scheduler.yield;
+      performance.now = () => now.call(performance) + 100; // Exhaust the current slice before applying the reply.
+      scheduler.yield = () => {
+        performance.now = now;
+        scheduler.yield = yieldTask;
+        return new Promise(resolve => { window.__resumeTranslation = resolve; });
+      };
+      window.dispatchEvent(new CustomEvent('ght:res', {
+        detail: JSON.stringify({ id: window.__hungRequest, result: ['Привет first', 'Привет second'] }),
+      }));
+    });
+    await page.waitForFunction(() => Boolean(window.__resumeTranslation), { timeout: 3000 });
+    await page.click('#native-action');
+    assert.equal(await page.evaluate(() => window.__nativeClicked), true);
+    assert.equal(await page.$('[data-ght-clone]'), null);
+    await page.evaluate(() => window.__resumeTranslation());
+    await page.waitForSelector('[data-ght-clone]');
+    await settled();
+    assert.deepEqual(await page.$$eval('[data-ght-clone] p', nodes => nodes.map(node => node.textContent)), ['Привет first', 'Привет second']);
+  } finally { await page.close(); }
 });
 
 
@@ -1468,6 +1499,30 @@ test('editing a working source cancels its stale translation', async () => {
     });
     await page.waitForSelector('[data-ght-clone]');
     assert.match(await page.$eval('[data-ght-clone]', el => el.textContent), /Привет edited description/);
+  } finally { await page.close(); }
+});
+
+test('a translation reply arriving just after an edit is never displayed', async () => {
+  const { page } = await fixture(comment(), { mode: 'stalled' });
+  try {
+    await page.waitForFunction(() => Boolean(window.__hungRequest));
+    await page.evaluate(() => {
+      window.__insertedTranslations = [];
+      new MutationObserver(records => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (node.matches?.('[data-ght-clone]')) window.__insertedTranslations.push(node.querySelector('p').textContent);
+          }
+        }
+      }).observe(document.body, { childList: true, subtree: true });
+      window.__engineMode = 'ready';
+      document.querySelector('[data-ght-source] p').textContent = 'Hello edited description';
+      window.dispatchEvent(new CustomEvent('ght:res', {
+        detail: JSON.stringify({ id: window.__hungRequest, result: ['Привет description'] }),
+      }));
+    });
+    await page.waitForFunction(() => window.__insertedTranslations.includes('Привет edited description'));
+    assert.deepEqual(await page.evaluate(() => window.__insertedTranslations), ['Привет edited description']);
   } finally { await page.close(); }
 });
 

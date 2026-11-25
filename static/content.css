@@ -250,7 +250,7 @@ h2:has(> .ght-control-about),
 
 .ght-toggle:disabled {
   color: var(--fgColor-muted, #59636e);
-  cursor: progress;
+  cursor: default;
 }
 
 .ght-toggle[data-state="error"] {
