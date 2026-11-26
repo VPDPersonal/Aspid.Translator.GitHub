@@ -39,4 +39,10 @@ Requires Chrome 138 or later on desktop. Public downloads are pending.
 
 Translation runs on your device. [Privacy policy](PRIVACY.md)
 
-[**Report a problem**](https://github.com/VPDPersonal/Aspid.Translator.GitHub/issues) · [Star on GitHub](https://github.com/VPDPersonal/Aspid.Translator.GitHub)
+[**Report a problem**](https://github.com/VPDPersonal/Aspid.Translator.GitHub/issues)
+
+## Support the project
+
+If this extension helps you read GitHub in your language, [star it on GitHub](https://github.com/VPDPersonal/Aspid.Translator.GitHub) or support its development on Ko-fi.
+
+<a href="https://ko-fi.com/vpdaspid"><img src="https://vpdpersonal.github.io/VPDPersonal/support/kofi-button.svg#stacked" alt="Tip on Ko-fi" width="100%" height="48" /></a>
