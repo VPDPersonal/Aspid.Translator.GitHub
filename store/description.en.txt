@@ -12,7 +12,7 @@ WHAT GETS TRANSLATED
 • Home and Feed activity cards when you are signed in
 
 CODE STAYS CODE
-Code blocks, inline code, identifiers such as SerializeReference, @mentions, #issue references, links, conventional commit prefixes (fix(scope):) and git trailers (Co-Authored-By:) are never translated.
+Code blocks, inline code, and names written in camelCase or snake_case (like getUserName and user_id) stay as written. The translation also preserves @mentions, issue references (like #42), link destinations, conventional commit prefixes (fix(scope):) and Git trailers (Co-Authored-By:).
 
 THE ORIGINAL IS ONE CLICK AWAY
 • Every comment has its own "Show original" toggle

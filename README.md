@@ -12,9 +12,12 @@ and keeps code, links and mentions intact.
 
 ## Installation
 
-[**Chrome Web Store search**](https://chromewebstore.google.com/search/Aspid.Translator.GitHub) · [**GitHub Releases**](https://github.com/VPDPersonal/Aspid.Translator.GitHub/releases)
+Requires Chrome 138 or later on desktop. Publication in the Chrome Web Store is pending approval.
 
-Requires Chrome 138 or later on desktop. Public downloads are pending.
+1. Open [**GitHub Releases**](https://github.com/VPDPersonal/Aspid.Translator.GitHub/releases)
+   and download the `asp-translator-github-<version>.zip` asset. Extract it to a folder you can keep.
+2. In Chrome, open `chrome://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the folder containing `manifest.json`.
 
 ## Before and after
 
