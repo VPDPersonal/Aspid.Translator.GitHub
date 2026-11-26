@@ -1,45 +1,41 @@
-Read GitHub in your own language.
+Review pull requests in your own language.
 
-Aspid.Translator.GitHub translates pull requests, issues, discussions, releases, commits and documentation right on github.com. The translation appears where the original was. Code, links and mentions stay as they are, and the original is one click away.
+Aspid.Translator.GitHub translates pull requests, code reviews, issues, commits and documentation in place on github.com. It keeps code, link destinations and mentions intact, and the original is one click away.
 
-Free and private: translation runs on your device with Chrome's built-in translator. No account, no API key, no servers.
+Free and private: translation runs on your device with the translator built into Chrome. No account, no API key, no servers.
 
 WHAT GETS TRANSLATED
-• Pull requests: titles, descriptions, conversation and code review comments
-• Issues and Discussions: titles, bodies, answers and replies
-• PR and issue lists, releases and release notes, Compare commit messages and Wiki pages
-• Commits: titles and descriptions in lists, on commit pages and in timelines
-• Repository READMEs, rendered .md files, About descriptions and file-list commit messages
-• Content cards on signed-in Home and Feed pages
+• Pull requests: the title, description, conversation and code review comments
+• Titles, descriptions and replies in Issues and Discussions, plus list titles
+• Commits: titles and descriptions in the commit list, on the commit page and in the PR timeline
+• About descriptions, READMEs, rendered Markdown, wiki pages and release notes
+• Home and Feed activity cards when you are signed in
 
 CODE STAYS CODE
-Code blocks, inline code, identifiers such as SerializeReference, @mentions, #issue references, links, conventional commit prefixes (fix(scope):) and git trailers (Co-Authored-By:) are preserved. Source diffs, comment editors, release versions and download names stay unchanged.
+Code blocks, inline code, identifiers such as SerializeReference, @mentions, #issue references, links, conventional commit prefixes (fix(scope):) and git trailers (Co-Authored-By:) are never translated.
 
 THE ORIGINAL IS ONE CLICK AWAY
-• Comments, documents and release notes have their own translation controls
-• Titles show the original on hover
-• Lists, Wiki, Home and Feed use the page-wide control
-• Use the floating button or keyboard shortcut to switch the whole page
+• Every comment has its own "Show original" toggle
+• Titles and commits show the original on hover
+• A floating button flips the whole page between the translation and the original
 
-TRANSLATES AS YOU SCROLL
-Only content near the viewport is translated. Text already in your language is skipped. New and edited comments and page switches without a reload are picked up automatically.
+FAST ON HUGE PULL REQUESTS
+Only what scrolls into view gets translated, and text that is already in your language is skipped. New and edited comments and page switches without a reload are picked up on their own.
 
 YOUR RULES
-• Choose from 39 target languages, including English, Russian, Ukrainian, Arabic, Chinese (Simplified and Traditional), French, German, Japanese and Korean
-• The target follows your browser's preferred languages until you choose another
-• The settings page is available in every target language
-• Translate automatically or on demand, and choose which parts of GitHub to translate
+• Choose from 39 target languages
+• Translate automatically or with one click
+• Turn off commits, READMEs or review comments with one checkbox
 
 PRIVACY
-• Text is processed by Chrome on your device and is not sent to a translation server.
-• Chrome downloads language models from Google when needed. Your page text is not included in those download requests.
-• The extension runs only on github.com and requests storage to keep your settings locally.
-• No analytics, tracking or extension account.
-• Nothing is posted to GitHub. Other people continue to see the original.
+• Text is translated by Chrome on your device. The extension has no servers and sends nothing anywhere.
+• Chrome downloads a language model from Google once per language pair. Your text is not part of that request.
+• The extension runs only on github.com and asks for one permission, storage, to keep your settings.
+• No analytics, no tracking, no account.
+• Only you see the translation. Nothing is posted to GitHub.
 
 REQUIREMENTS
-Desktop Google Chrome 138 or newer. On first use, click Download translation model when prompted. Initial model downloads need an internet connection. Language-pair availability depends on Chrome.
+Desktop Chrome 138 or newer. The first time you translate a language pair, click the translation button in the bottom right corner: Chrome downloads the language model once.
 
 Open source under the MIT license: https://github.com/VPDPersonal/Aspid.Translator.GitHub
-Report an issue: https://github.com/VPDPersonal/Aspid.Translator.GitHub/issues
-For support, include your Chrome and extension versions, source and target languages, and steps to reproduce. Share a public example or a redacted screenshot; do not post private repository text.
+Found a bad translation or a page that is not translated? Open an issue on GitHub.
