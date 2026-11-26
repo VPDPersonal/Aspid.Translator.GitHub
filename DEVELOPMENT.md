@@ -19,13 +19,13 @@ and refresh any open GitHub tab to load the new content scripts.
 Run `npm test` for the translation, DOM and packaging tests. The end-to-end test installs the
 contents of the release ZIP in a temporary Chrome profile and changes settings in an open tab.
 These tests use a translation stand-in. Set `CHROME_PATH` to override the system Chrome executable.
-Check Chrome's real translation models and personalized Home/Feed layouts manually.
+The [release checklist](Documentation/RELEASE.md) covers real-model checks and signed-in Home/Feed.
 
 Run `npm run check` to run the tests, build the Web Store archive and validate
 its manifest, permissions, localized messages, icons, fonts and licenses.
 To validate an existing archive after `npm run zip`, run `npm run validate`.
 GitHub Actions runs these checks on Linux, macOS and Windows and keeps the
-validated Linux ZIP as an artifact. Model downloads still need a separate manual check.
+validated Linux ZIP as an artifact.
 The Linux matrix also checks Chrome 138, and the workflow rejects high-severity tooling
 dependency advisories with `npm audit`.
 
@@ -48,7 +48,7 @@ dependency advisories with `npm audit`.
 | `build.mjs` | Bundles the scripts, renders the icons, copies the IBM Plex fonts of the settings page from `@fontsource`, sets the manifest version from `package.json` and packs the archive. |
 | `store/` | Chrome Web Store listing: descriptions, Dashboard answers, screenshots, promo tiles and `render.mjs`, which renders the images. |
 
-To release a new version, bump `version` in `package.json` and run `npm run zip`.
+To prepare a new release, follow the [Chrome Web Store checklist](Documentation/RELEASE.md).
 When the UI changes, re-render the store images with `npm run store:shots` and `npm run store:promo`:
 they run system Chrome headless (or the executable in `CHROME_PATH`).
 The Dashboard fields are in [`store/README.md`](store/README.md).
