@@ -4,6 +4,7 @@
 </picture>
 
 [![Chrome 138 or newer](https://vpdpersonal.github.io/VPDPersonal/badges/aspid-translator-github/platform.svg)](#installation)
+[![Latest release](https://vpdpersonal.github.io/VPDPersonal/badges/aspid-translator-github/status-badge-release.svg)](https://github.com/VPDPersonal/Aspid.Translator.GitHub/releases/latest)
 [![MIT License](https://vpdpersonal.github.io/VPDPersonal/badges/status-badge-license.svg)](LICENSE)
 
 Read pull requests, issues, comments, commit messages and READMEs in your language.
