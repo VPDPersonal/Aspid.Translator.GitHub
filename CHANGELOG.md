@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-First release planned for **0.1.0**. Requires desktop Google Chrome **138** or newer.
+## [0.1.0]
+
+Initial release. Requires desktop Google Chrome **138** or newer.
 
 ### Added
 
