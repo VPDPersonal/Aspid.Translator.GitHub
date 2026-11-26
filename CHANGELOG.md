@@ -13,8 +13,21 @@ Initial release. Requires desktop Google Chrome **138** or newer.
 
 ### Added
 
-- Translate pull requests, reviews, issues, discussions, commits and repository files in place, along with releases, wikis and signed-in Home and Feed cards.
-- Choose from 39 target languages and control which parts of GitHub get translated.
-- Switch between originals and translations beside individual items or across the whole page. Use the configurable keyboard shortcut for the page-wide switch.
-- Keep code, links, mentions and commit metadata intact during translation.
-- Translate on-device with Chrome's built-in models and store preferences locally.
+- **Pull requests, issues and discussions.** Read translated titles, descriptions, conversations
+  and code review comments in place. Titles in issue, pull request and discussion lists are translated too.
+- **Commits and repository content.** Translate commit titles and descriptions in commit lists,
+  on commit and comparison pages, and in pull request timelines. Translation also covers repository
+  descriptions, READMEs, rendered Markdown files, release notes, wiki pages and signed-in Home and Feed cards.
+- **Translation controls.** Choose from 39 target languages, translate automatically or on demand,
+  and turn translation on or off for individual types of content.
+- **Access to the original.** Use **Show original** beside a translated comment, hover over a
+  translated title or commit message, or switch the whole page with the floating button or
+  the configurable shortcut (**Alt+Shift+J** by default).
+- **Code and formatting.** Keep code blocks, inline code, identifiers such as `getUserName` and
+  `user_id`, link destinations, @mentions, issue references, conventional commit prefixes and Git
+  trailers intact. Preserve the structure of Markdown lists and tables.
+- **Translation as you browse.** Content is queued as it comes near the visible part of the page.
+  The extension skips text already in the target language and picks up new or edited comments
+  and navigation within GitHub.
+- **On-device translation.** Chrome downloads a model the first time you translate a language pair.
+  Translation runs on your device, and the extension stores your preferences locally.
