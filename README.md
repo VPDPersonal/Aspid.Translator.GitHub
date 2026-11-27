@@ -13,7 +13,11 @@ and keeps code, links and mentions intact.
 
 ## Installation
 
-Requires Chrome 138 or later on desktop. Publication in the Chrome Web Store is pending approval.
+Requires Chrome 138 or later on desktop.
+
+[**Install from the Chrome Web Store**](https://chromewebstore.google.com/detail/hinmldlcpnhfaijonnaphpinbecpjmma)
+
+### Manual installation from GitHub
 
 1. Open [**GitHub Releases**](https://github.com/VPDPersonal/Aspid.Translator.GitHub/releases)
    and download the `asp-translator-github-<version>.zip` asset. Extract it to a folder you can keep.
